@@ -23,4 +23,8 @@ abstract class Room<K>(val id: Int) {
     }
 
     fun hasAnyPassengers() = passengers.isNotEmpty()
+
+    override fun toString(): String {
+        return super.toString() + ":{ id:$id }"
+    }
 }

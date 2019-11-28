@@ -1,39 +1,97 @@
 package com.xdd.elevatorservicedemo.model
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import kotlin.math.abs
 
 class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
-    private val liveFloor = MutableLiveData(service.config.baseFloor)
-    private val liveMovement = MutableLiveData(Movement.NONE)
+    /**
+     * a target floor and a future movement after arriving at that floor
+     * */
+    internal class Goal(
+        internal val floor: Floor,
+        preferredFutureMovement: Movement,
+        elseFutureMovement: Movement
+    ) {
+        internal val futureMovement = if (floor.hasPassengers(preferredFutureMovement)) {
+            preferredFutureMovement
+        } else {
+            elseFutureMovement
+        }
+
+        override fun toString(): String {
+            return super.toString() + ":{ floor:$floor, futureMovement:$futureMovement }"
+        }
+    }
+
+    internal inner class CandidateRequest(
+        private val wantedMovement: Movement,
+        private val candidateFloors: Iterable<Int>
+    ) {
+        internal fun findGoal(): Goal? {
+            // from candidate floors, find the first floor
+            // that has (internal requests) or (external requests with the same movement)
+            val targetFloor = candidateFloors.map {
+                service.getFloor(it)
+            }.firstOrNull { floor ->
+                hasPassengers(floor.id) || floor.hasPassengers(wantedMovement)
+            }
+
+            return targetFloor?.let { floor ->
+                Goal(floor, wantedMovement, Movement.NONE)
+            }
+        }
+    }
+
+    private val _liveFloor = MutableLiveData(0)
+    val liveFloor: LiveData<Int> = _liveFloor
+    private var realFloor = service.config.baseFloor
+        set(value) {
+            if (field != value) {
+                field = value
+                _liveFloor.postValue(value)
+            }
+        }
+
+    private val _liveMovement = MutableLiveData(Movement.NONE)
+    val liveMovement: LiveData<Movement> = _liveMovement
+    private var realMovement = Movement.NONE
+        set(value) {
+            if (field != value) {
+                field = value
+                _liveMovement.postValue(value)
+            }
+        }
 
     override fun getPassengerKey(passenger: Passenger): Int = passenger.toFloor
 
     fun move() {
         while (true) {
-            getNextDestFloor()?.let {
-                val origFloor = liveFloor.value!!
-                val newMovement = if (it.id > origFloor) Movement.UP else Movement.DOWN
-                val newFloor = origFloor + newMovement.offset
+            getNextGoal()?.let { goal ->
+                val goalFloorId = goal.floor.id
 
-                liveFloor.postValue(newFloor)
-                liveMovement.postValue(newMovement)
+                realMovement = Movement.infer(realFloor, goalFloorId)
+                realFloor += realMovement.offset
 
-                if (newFloor == it.id) {
-                    arriveFloor()
+                if (realFloor == goalFloorId) {
+                    arriveFloor(goal)
                 }
 
                 Thread.sleep(500) // xdd
             } ?: kotlin.run {
-                liveMovement.postValue(Movement.NONE)
-                service.noPassengerCondition.await()
+                realMovement = Movement.NONE
+                service.conditionWait()
             }
         }
     }
 
-    private fun arriveFloor() {
-        val currentFloor = liveFloor.value!!
-        val currentMovement = liveMovement.value!!
+    private fun arriveFloor(goal: Goal) {
+        if (goal.futureMovement != Movement.NONE) {
+            realMovement = goal.futureMovement
+        }
+
+        val currentFloor = realFloor
+        val currentMovement = realMovement
 
         // leave elevator
         removePassengers(currentFloor)
@@ -45,51 +103,73 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
                 addPassenger(it)
             }
 
-        // movement can only be updated when arriving floor
+        var nextMovement: Movement? = null
         if (hasAnyPassengers()) {
             if (currentFloor == service.topFloor && currentMovement == Movement.UP) {
-                liveMovement.postValue(Movement.DOWN)
+                nextMovement = Movement.DOWN
             } else if (currentFloor == service.config.baseFloor && currentMovement == Movement.DOWN) {
-                liveMovement.postValue(Movement.UP)
+                nextMovement = Movement.UP
             }
         } else {
-            liveMovement.postValue(Movement.NONE)
+            nextMovement = Movement.NONE
+        }
+
+        nextMovement?.let {
+            realMovement = it
         }
     }
 
-    private fun getNextDestFloor(): Floor? {
-        val currentFloor = liveFloor.value!!
+    /**
+     * getNextDestFloor
+     * */
+    private fun getNextGoal(): Goal? {
+        val currentFloor = realFloor
+        val currentMovement = realMovement
+        val top = service.topFloor
+        val base = service.config.baseFloor
 
-        return when (liveMovement.value!!) {
-            Movement.NONE -> getNearestFloor()
-            Movement.UP -> getNearestSameMovementFloor(
-                Movement.UP,
-                currentFloor + 1..service.topFloor
+        return when (currentMovement) {
+            Movement.NONE -> getNearestGoal()
+            Movement.UP -> getPrioritizedGoal(
+                CandidateRequest(currentMovement, currentFloor + 1..top),
+                CandidateRequest(currentMovement.reverse(), top downTo base),
+                CandidateRequest(currentMovement, base until currentFloor)
             )
-            Movement.DOWN -> getNearestSameMovementFloor(
-                Movement.DOWN,
-                currentFloor - 1 downTo service.config.baseFloor
+            Movement.DOWN -> getPrioritizedGoal(
+                CandidateRequest(currentMovement, currentFloor - 1 downTo base),
+                CandidateRequest(currentMovement.reverse(), base..top),
+                CandidateRequest(currentMovement, top downTo currentFloor + 1)
             )
         }
     }
 
-    private fun getNearestFloor(): Floor? {
-        val currentFloor = liveFloor.value!!
+    /**
+     * doesn't take Movement into account
+     * */
+    private fun getNearestGoal(): Goal? {
+        val currentFloor = realFloor
 
-        return service.floors.filter {
+        // find a nearest floor with any waiting passengers
+        val targetFloor = service.floors.filter {
             it.hasAnyPassengers()
         }.minBy {
             abs(it.id - currentFloor)
         }
+
+        return targetFloor?.let { floor ->
+            // if going from currentFloor to targetFloor,
+            // the future movement after arriving at targetFloor will be the same as original one
+            val preferredFutureMovement =
+                if (floor.id > currentFloor) Movement.UP else Movement.DOWN
+            Goal(floor, preferredFutureMovement, preferredFutureMovement.reverse())
+        }
     }
 
-    private fun getNearestSameMovementFloor(movement: Movement, floorRange: Iterable<Int>): Floor? {
-        return floorRange.map {
-            service.getFloor(it)
-        }.first {
-            // has passengers who want to leave at `it` floor
-            // has passengers who want to enter the elevator and have the same movement at `it` floor
-            hasPassengers(it.id) || it.hasPassengers(movement)
+    private fun getPrioritizedGoal(vararg candidateRequests: CandidateRequest): Goal? {
+        candidateRequests.forEach {
+            val goal = it.findGoal()
+            if (goal != null) return goal
         }
+        return null
     }
 }

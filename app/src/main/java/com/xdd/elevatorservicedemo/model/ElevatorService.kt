@@ -19,7 +19,7 @@ class ElevatorService(val config: Config) {
 
     private val lock = ReentrantLock()
 
-    val noPassengerCondition: Condition = lock.newCondition()
+    private val noPassengerCondition: Condition = lock.newCondition()
 
     val floors = List(config.floorCount) { Floor(indexToFloor(it)) }
 
@@ -31,10 +31,33 @@ class ElevatorService(val config: Config) {
 
     fun newPassenger(passenger: Passenger) {
         getFloor(passenger.fromFloor).addPassenger(passenger)
-        noPassengerCondition.signalAll()
+        conditionSignal()
     }
 
     fun start() {
-        elevators.forEach(Elevator::move)
+        elevators.forEach {
+            // xdd: use coroutine
+            Thread {
+                it.move()
+            }.start()
+        }
+    }
+
+    fun conditionWait() {
+        lock.lock()
+        try {
+            noPassengerCondition.await()
+        } finally {
+            lock.unlock()
+        }
+    }
+
+    fun conditionSignal() {
+        lock.lock()
+        try {
+            noPassengerCondition.signalAll()
+        } finally {
+            lock.unlock()
+        }
     }
 }

@@ -43,4 +43,13 @@ class ElevatorFragment : Fragment() {
         fragmentBinding.viewModel = viewModel
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.startRandomPassenger(true)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.startRandomPassenger(false)
+    }
 }

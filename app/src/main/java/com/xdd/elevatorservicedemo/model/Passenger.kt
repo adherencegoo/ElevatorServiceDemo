@@ -3,7 +3,7 @@ package com.xdd.elevatorservicedemo.model
 import android.graphics.Color
 import java.util.*
 
-class Passenger(val fromFloor: Int, val toFloor: Int) {
+data class Passenger(val fromFloor: Int, val toFloor: Int) {
     companion object {
         private var currentId = 0
 
