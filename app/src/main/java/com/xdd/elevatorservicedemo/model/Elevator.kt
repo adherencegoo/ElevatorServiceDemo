@@ -2,6 +2,7 @@ package com.xdd.elevatorservicedemo.model
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.xdd.elevatorservicedemo.nonNullMinBy
 import kotlin.math.abs
 
 class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
@@ -129,7 +130,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
         val base = service.config.baseFloor
 
         return when (currentMovement) {
-            Movement.NONE -> getNearestGoal()
+            Movement.NONE -> getPrioritizedGoalWithNoneMovement()
             Movement.UP -> getPrioritizedGoal(
                 CandidateRequest(currentMovement, currentFloor + 1..top),
                 CandidateRequest(currentMovement.reverse(), top downTo base),
@@ -146,23 +147,39 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
     /**
      * doesn't take Movement into account
      * */
-    private fun getNearestGoal(): Goal? {
+    private fun getPrioritizedGoalWithNoneMovement(): Goal? {
         val currentFloor = realFloor
+        val top = service.topFloor
+        val base = service.config.baseFloor
 
-        // find a nearest floor with any waiting passengers
-        val targetFloor = service.floors.filter {
-            it.hasAnyPassengers()
-        }.minBy {
-            abs(it.id - currentFloor)
+        // serve current floor
+        service.getFloor(currentFloor).takeIf { it.hasAnyPassengers() }?.let {
+            return Goal(it, Movement.UP, Movement.DOWN)
         }
 
-        return targetFloor?.let { floor ->
-            // if going from currentFloor to targetFloor,
-            // the future movement after arriving at targetFloor will be the same as original one
-            val preferredFutureMovement =
-                if (floor.id > currentFloor) Movement.UP else Movement.DOWN
-            Goal(floor, preferredFutureMovement, preferredFutureMovement.reverse())
-        }
+        // serve outward passengers
+        Pair(
+            CandidateRequest(Movement.UP, currentFloor + 1..top).findGoal(),
+            CandidateRequest(Movement.DOWN, currentFloor - 1 downTo base).findGoal())
+            .nonNullMinBy {
+                // find the one which is closer to currentFloor
+                abs(it.floor.id - currentFloor)
+            }?.let {
+                return it
+            }
+
+        // serve inward passengers
+        Pair(
+            CandidateRequest(Movement.DOWN, top downTo currentFloor + 1).findGoal(),
+            CandidateRequest(Movement.UP, base until currentFloor).findGoal())
+            .nonNullMinBy {
+                // find the one which is farther to currentFloor
+                -abs(it.floor.id - currentFloor)
+            }?.let {
+                return it
+            }
+
+        return null
     }
 
     private fun getPrioritizedGoal(vararg candidateRequests: CandidateRequest): Goal? {
