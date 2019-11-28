@@ -107,21 +107,6 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
             .forEach {
                 addPassenger(it)
             }
-
-        var nextMovement: Movement? = null
-        if (hasAnyPassengers()) {
-            if (currentFloor == service.topFloor && currentMovement == Movement.UP) {
-                nextMovement = Movement.DOWN
-            } else if (currentFloor == service.config.baseFloor && currentMovement == Movement.DOWN) {
-                nextMovement = Movement.UP
-            }
-        } else {
-            nextMovement = Movement.NONE
-        }
-
-        nextMovement?.let {
-            realMovement = it
-        }
     }
 
     /**
