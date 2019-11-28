@@ -2,6 +2,7 @@ package com.xdd.elevatorservicedemo.model
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.nonNullMinBy
 import kotlin.math.abs
 
@@ -21,7 +22,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
         }
 
         override fun toString(): String {
-            return super.toString() + ":{ floor:$floor, futureMovement:$futureMovement }"
+            return Lg.toNoPackageSimpleString(this, true) + ":{ floor:$floor, futureMovement:$futureMovement }"
         }
     }
 
@@ -49,6 +50,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
     private var realFloor = service.config.baseFloor
         set(value) {
             if (field != value) {
+                Lg.become("realFloor", field, value).printLog(Lg.Type.I)
                 field = value
                 _liveFloor.postValue(value)
             }
@@ -59,6 +61,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
     private var realMovement = Movement.NONE
         set(value) {
             if (field != value) {
+                Lg.become("realMovement", field, value).printLog(Lg.Type.I)
                 field = value
                 _liveMovement.postValue(value)
             }
@@ -68,7 +71,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
 
     fun move() {
         while (true) {
-            getNextGoal()?.let { goal ->
+            getNextGoal().also { Lg.v("nextGoal:$it, realFloor:${service.getFloor(realFloor)}, realMovement:$realMovement") }?.let { goal ->
                 val goalFloorId = goal.floor.id
 
                 realMovement = Movement.infer(realFloor, goalFloorId)
@@ -95,10 +98,11 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Int>(id) {
         val currentMovement = realMovement
 
         // leave elevator
-        removePassengers(currentFloor)
+        removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
 
         // leave floor
         service.getFloor(currentFloor).removePassengers(currentMovement)
+            .also { Lg.d("($currentMovement) leave ${service.getFloor(currentFloor)}, enter $this: $it") }
             // enter elevator
             .forEach {
                 addPassenger(it)

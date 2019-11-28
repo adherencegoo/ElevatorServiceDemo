@@ -1,5 +1,7 @@
 package com.xdd.elevatorservicedemo.model
 
+import com.example.xddlib.presentation.Lg
+
 
 /**
  * A space containing people
@@ -11,6 +13,7 @@ abstract class Room<K>(val id: Int) {
 
     fun addPassenger(passenger: Passenger) {
         passengers.getOrPut(getPassengerKey(passenger), { mutableListOf() }) += passenger
+        Lg.i(this, passenger)
     }
 
     fun removePassengers(key: K): List<Passenger> {
@@ -25,6 +28,6 @@ abstract class Room<K>(val id: Int) {
     fun hasAnyPassengers() = passengers.isNotEmpty()
 
     override fun toString(): String {
-        return super.toString() + ":{ id:$id }"
+        return Lg.toNoPackageSimpleString(this, true) + ":{ id:$id }"
     }
 }
