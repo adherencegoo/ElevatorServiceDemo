@@ -6,6 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
 import com.xdd.elevatorservicedemo.model.ElevatorService
 
@@ -37,10 +40,18 @@ class ElevatorFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        val factory =
-            ElevatorViewModel.Factory(arguments?.getSerializable(KEY_ELEVATOR_CONFIG) as ElevatorService.Config)
+        val config = arguments?.getSerializable(KEY_ELEVATOR_CONFIG) as ElevatorService.Config
+        val factory = ElevatorViewModel.Factory(config)
         viewModel = ViewModelProviders.of(this, factory).get(ElevatorViewModel::class.java)
+
         fragmentBinding.viewModel = viewModel
+
+        val layoutOrientation = RecyclerView.VERTICAL
+        fragmentBinding.floorsView.apply {
+            adapter = FloorAdapter(viewModel.floors)
+            layoutManager = LinearLayoutManager(context, layoutOrientation, true)
+            addItemDecoration(DividerItemDecoration(context, layoutOrientation))
+        }
     }
 
     override fun onResume() {

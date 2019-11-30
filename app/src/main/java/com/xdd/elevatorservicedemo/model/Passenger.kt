@@ -16,4 +16,6 @@ data class Passenger(val fromFloor: Int, val toFloor: Int) {
     val id = generateId()
 
     val color = Color.rgb(random.nextFloat(), random.nextFloat(), random.nextFloat())
+
+    fun name() = id.toString()
 }

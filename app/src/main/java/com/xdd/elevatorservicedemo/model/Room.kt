@@ -11,6 +11,8 @@ abstract class Room<K>(val id: Int) {
 
     abstract fun getPassengerKey(passenger: Passenger): K
 
+    open fun idToName() = id.toString()
+
     fun addPassenger(passenger: Passenger) {
         passengers.getOrPut(getPassengerKey(passenger), { mutableListOf() }) += passenger
         Lg.i(this, passenger)

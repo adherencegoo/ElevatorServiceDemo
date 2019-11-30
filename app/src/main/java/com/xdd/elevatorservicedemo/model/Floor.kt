@@ -12,4 +12,6 @@ class Floor(id: Int) : Room<Movement>(id) {
 
     override fun getPassengerKey(passenger: Passenger): Movement =
         if (passenger.toFloor > id) Movement.UP else Movement.DOWN
+
+    override fun idToName(): String = floorName(id)
 }

@@ -16,6 +16,8 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
 
     private val elevatorService = ElevatorService(config)
 
+    val floors = elevatorService.floors
+
 //    init { // xdd
 //        elevatorService.elevators.forEach {  elevator ->
 //            elevator.liveFloor.observeForever {
