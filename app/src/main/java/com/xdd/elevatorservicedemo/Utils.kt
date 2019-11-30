@@ -1,6 +1,7 @@
 package com.xdd.elevatorservicedemo
 
 import androidx.databinding.Observable
+import java.lang.NumberFormatException
 
 inline fun <reified T : Observable> T.addOnPropertyChanged(crossinline callback: (T) -> Unit) =
     object : Observable.OnPropertyChangedCallback() {
@@ -10,7 +11,11 @@ inline fun <reified T : Observable> T.addOnPropertyChanged(crossinline callback:
         addOnPropertyChangedCallback(it)
     }
 
-fun String?.nullableToInt(): Int = this.takeUnless(String?::isNullOrEmpty)?.toInt() ?: 0
+fun String?.nullableToInt(): Int = try {
+    this?.toInt() ?: 0
+} catch (e: NumberFormatException) {
+    0
+}
 
 fun<T : Any, R : Comparable<R>> Pair<T?, T?>.nonNullMinBy(selector: (T) -> R): T? {
     return if (first != null) {
