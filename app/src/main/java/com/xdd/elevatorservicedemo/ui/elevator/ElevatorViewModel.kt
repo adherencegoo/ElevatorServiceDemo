@@ -14,9 +14,7 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
             ElevatorViewModel(config) as T
     }
 
-    private val elevatorService = ElevatorService(config)
-
-    val floors = elevatorService.floors
+    val elevatorService = ElevatorService(config)
 
 //    init { // xdd
 //        elevatorService.elevators.forEach {  elevator ->

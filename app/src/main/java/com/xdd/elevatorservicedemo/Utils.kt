@@ -1,5 +1,7 @@
 package com.xdd.elevatorservicedemo
 
+import android.view.View
+import android.view.ViewTreeObserver
 import androidx.databinding.Observable
 import java.lang.NumberFormatException
 
@@ -29,4 +31,14 @@ fun<T : Any, R : Comparable<R>> Pair<T?, T?>.nonNullMinBy(selector: (T) -> R): T
     } else {
         second
     }
+}
+
+fun View.addDisposableOnGlobalLayoutListener(job: () -> Unit) {
+    val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
+        override fun onGlobalLayout() {
+            job.invoke()
+            viewTreeObserver.removeOnGlobalLayoutListener(this)
+        }
+    }
+    viewTreeObserver.addOnGlobalLayoutListener(listener)
 }

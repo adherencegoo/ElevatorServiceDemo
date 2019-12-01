@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.xdd.elevatorservicedemo.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
 import com.xdd.elevatorservicedemo.model.ElevatorService
 
@@ -26,6 +27,7 @@ class ElevatorFragment : Fragment() {
 
     private lateinit var fragmentBinding: ElevatorFragmentBinding
     private lateinit var viewModel: ElevatorViewModel
+    private lateinit var elevatorShaft: ElevatorShaft
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -34,6 +36,8 @@ class ElevatorFragment : Fragment() {
         fragmentBinding = ElevatorFragmentBinding.inflate(inflater, container, false).apply {
             lifecycleOwner = this@ElevatorFragment
         }
+
+        elevatorShaft = ElevatorShaft(fragmentBinding.elevatorShaftBinding)
         return fragmentBinding.root
     }
 
@@ -46,9 +50,20 @@ class ElevatorFragment : Fragment() {
 
         fragmentBinding.viewModel = viewModel
 
-        val layoutOrientation = RecyclerView.VERTICAL
+        initFloorsView()
+    }
+
+    private fun initFloorsView() {
         fragmentBinding.floorsView.apply {
-            adapter = FloorAdapter(viewModel.floors)
+            // when floorsView is fully loaded, update height of elevatorShaft
+            addDisposableOnGlobalLayoutListener {
+                // let floorsView and elevatorShaft have the same height
+                elevatorShaft.init(viewModel, 0, computeVerticalScrollRange())
+            }
+
+            adapter = FloorAdapter(viewModel.elevatorService.floors)
+
+            val layoutOrientation = RecyclerView.VERTICAL
             layoutManager = LinearLayoutManager(context, layoutOrientation, true)
             addItemDecoration(DividerItemDecoration(context, layoutOrientation))
         }
