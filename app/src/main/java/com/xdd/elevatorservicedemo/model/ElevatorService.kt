@@ -9,25 +9,25 @@ class ElevatorService(val config: Config) {
         val baseFloor: Int,
         val floorCount: Int,
         val elevatorCount: Int
-    ) : Serializable
+    ) : Serializable {
+        val topFloor = baseFloor + floorCount - 1
 
-    val topFloor = config.baseFloor + config.floorCount - 1
+        fun floorIdToIndex(floorId: Int) = floorId - baseFloor
 
-    private fun floorToIndex(floor: Int) = floor - config.baseFloor
-
-    private fun indexToFloor(index: Int) = index + config.baseFloor
+        fun indexToFloorId(index: Int) = index + baseFloor
+    }
 
     private val lock = ReentrantLock()
 
     private val noPassengerCondition: Condition = lock.newCondition()
 
-    val floors = List(config.floorCount) { Floor(indexToFloor(it)) }
+    val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
 
-    private val elevators = List(config.elevatorCount) {
-        Elevator(it, this)
-    }
+    val elevators = List(config.elevatorCount) { Elevator(it, this) }
 
-    fun getFloor(floor: Int) = floors[floorToIndex(floor)]
+    fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
+
+    fun getFloor(floor: Floor, offset: Int) = floors[config.floorIdToIndex(floor.id + offset)]
 
     fun newPassenger(passenger: Passenger) {
         getFloor(passenger.fromFloor).addPassenger(passenger)

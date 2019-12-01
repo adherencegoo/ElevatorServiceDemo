@@ -14,4 +14,6 @@ class Floor(id: Int) : Room<Movement>(id) {
         if (passenger.toFloor > id) Movement.UP else Movement.DOWN
 
     override fun idToName(): String = floorName(id)
+
+    operator fun minus(floor: Floor): Int = this.id - floor.id
 }
