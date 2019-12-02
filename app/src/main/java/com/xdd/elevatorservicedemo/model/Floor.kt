@@ -1,7 +1,7 @@
 package com.xdd.elevatorservicedemo.model
 
 
-class Floor(id: Int) : Room<Movement>(id) {
+class Floor(id: Int) : Room<Direction>(id) {
     companion object {
         fun floorName(id: Int): String = if (id >= 0) {
             (id + 1).toString() + "F"
@@ -10,8 +10,8 @@ class Floor(id: Int) : Room<Movement>(id) {
         }
     }
 
-    override fun getPassengerKey(passenger: Passenger): Movement =
-        if (passenger.toFloor > id) Movement.UP else Movement.DOWN
+    override fun getPassengerKey(passenger: Passenger): Direction =
+        if (passenger.toFloor > id) Direction.UP else Direction.DOWN
 
     override fun idToName(): String = floorName(id)
 
