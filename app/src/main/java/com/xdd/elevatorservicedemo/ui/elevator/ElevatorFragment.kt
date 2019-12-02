@@ -1,14 +1,14 @@
 package com.xdd.elevatorservicedemo.ui.elevator
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.xdd.elevatorservicedemo.R
 import com.xdd.elevatorservicedemo.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
 import com.xdd.elevatorservicedemo.model.ElevatorService
@@ -69,6 +69,11 @@ class ElevatorFragment : Fragment() {
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
     override fun onResume() {
         super.onResume()
         viewModel.startRandomPassenger(true)
@@ -77,5 +82,25 @@ class ElevatorFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         viewModel.startRandomPassenger(false)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.elevator_fragment, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_item_new_passenger -> {
+                val passenger = viewModel.newPassenger()
+                Toast.makeText(
+                    context,
+                    viewModel.elevatorService.getPassengerContent(passenger),
+                    Toast.LENGTH_LONG
+                ).show()
+                true
+            }
+            else -> false
+        }
     }
 }

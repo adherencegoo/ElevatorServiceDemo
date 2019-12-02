@@ -34,23 +34,29 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
     private var coordinateGenerator: TimerTask? = null
 
     fun startRandomPassenger(start: Boolean) {
+        // xdd: temporarily disable random timer
+        if (true) return
+
         coordinateGenerator = if (start) {
-            val config = elevatorService.config
-            Timer().scheduleAtFixedRate(0, 5000) {
-
-                var fromFloor: Int
-                var toFloor: Int
-                do {
-                    fromFloor = random.nextInt(config.floorCount) + config.baseFloor
-                    toFloor = random.nextInt(config.floorCount) + config.baseFloor
-                } while (fromFloor == toFloor)
-
-                elevatorService.newPassenger(Passenger(fromFloor, toFloor))
-            }
+            Timer().scheduleAtFixedRate(0, 5000) { newPassenger() }
         } else {
             coordinateGenerator?.cancel()
             null
         }
+    }
+
+    fun newPassenger(): Passenger {
+        val floorCount = elevatorService.config.floorCount
+        val baseFloor = elevatorService.config.baseFloor
+
+        var fromFloor: Int
+        var toFloor: Int
+        do {
+            fromFloor = random.nextInt(floorCount) + baseFloor
+            toFloor = random.nextInt(floorCount) + baseFloor
+        } while (fromFloor == toFloor)
+
+        return Passenger(fromFloor, toFloor).also { elevatorService.newPassenger(it) }
     }
 
     override fun onCleared() {
