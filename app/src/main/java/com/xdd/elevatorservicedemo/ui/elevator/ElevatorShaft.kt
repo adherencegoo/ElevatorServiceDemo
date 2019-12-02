@@ -39,6 +39,62 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
         }
     }
 
+    private inner class MoveAnimation(movement: Elevator.Movement) : ChangeBounds() {
+
+        init {
+            val fromFloorId = movement.fromFloor.id
+            val targetFloorId = movement.toFloor.id
+            assert(targetFloorId != fromFloorId)
+
+            val myDuration =
+                kotlin.math.abs(targetFloorId - fromFloorId) * serviceConfig.animationDurationPerFloor
+
+            // Setup Animator
+            // Because we can't get progress update from Transition, create an Animator to simulate progress update
+            val animator = ValueAnimator.ofInt(fromFloorId, targetFloorId).apply {
+                interpolator = animationInterpolator
+                duration = myDuration
+                addUpdateListener {
+                    elevator.setRealFloorId(it.animatedValue as Int)
+                }
+            }
+
+            // Setup self (Transition)
+            interpolator = animationInterpolator
+            duration = myDuration
+            addListener(LiveTransitionListener(animator))
+
+            // Actually change location of ElevatorRoom
+            val shaftLayout = shaftBinding.elevatorShaft
+            val targetFloorIndex = serviceConfig.floorIdToIndex(targetFloorId)
+            ConstraintSet().apply {
+                clone(shaftLayout)
+                connectVertical(
+                    shaftBinding.elevatorRoomBinding.elevatorRoom,
+                    floorBottomGuidelines[targetFloorIndex + 1],
+                    floorBottomGuidelines[targetFloorIndex]
+                )
+                applyTo(shaftLayout)
+            }
+
+            TransitionManager.beginDelayedTransition(shaftLayout, this)
+        }
+    }
+
+    private class LiveTransitionListener(private val boundAnimator: Animator) :
+        Transition.TransitionListener {
+
+        override fun onTransitionEnd(p0: Transition?) = boundAnimator.end()
+
+        override fun onTransitionResume(p0: Transition?) = boundAnimator.resume()
+
+        override fun onTransitionPause(p0: Transition?) = boundAnimator.pause()
+
+        override fun onTransitionCancel(p0: Transition?) = boundAnimator.cancel()
+
+        override fun onTransitionStart(p0: Transition?) = boundAnimator.start()
+    }
+
     // key: floor index
     private lateinit var floorBottomGuidelines: List<Guideline>
     private lateinit var serviceConfig: ElevatorService.Config
@@ -61,6 +117,14 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
             val params = layoutParams
             params.height = height
             layoutParams = params
+        }
+
+        // When movement changed, cancel old transition and start a new one
+        elevator.liveMovement.observeForever { nullableMovement ->
+            TransitionManager.endTransitions(shaftBinding.elevatorShaft)
+            nullableMovement?.let {
+                MoveAnimation(it)
+            }
         }
     }
 
@@ -88,48 +152,5 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
 
             guideline
         }
-    }
-
-    private fun moveToFloor(targetFloorId: Int): Pair<Animator, Transition>? {
-        val fromFloorId = elevator.realFloor.id
-        if (targetFloorId == fromFloorId) {
-            return null
-        }
-
-        val shaftLayout: ConstraintLayout = shaftBinding.elevatorShaft
-        val myDuration =
-            kotlin.math.abs(targetFloorId - fromFloorId) * serviceConfig.animationDurationPerFloor
-
-        val transition: Transition = ChangeBounds().apply {
-            interpolator = animationInterpolator
-            duration = myDuration
-        }
-
-        // Because we can't get progress update from Transition, create an Animator to simulate progress update
-        val animator = ValueAnimator.ofInt(fromFloorId, targetFloorId).apply {
-            interpolator = animationInterpolator
-            duration = myDuration
-            addUpdateListener {
-                elevator.setRealFloorId(it.animatedValue as Int)
-            }
-        }
-
-        // Actually change location of ElevatorRoom
-        val targetFloorIndex = serviceConfig.floorIdToIndex(targetFloorId)
-        ConstraintSet().apply {
-            clone(shaftLayout)
-            connectVertical(
-                shaftBinding.elevatorRoomBinding.elevatorRoom,
-                floorBottomGuidelines[targetFloorIndex + 1],
-                floorBottomGuidelines[targetFloorIndex]
-            )
-            applyTo(shaftLayout)
-        }
-
-        // Start transition animation
-        TransitionManager.beginDelayedTransition(shaftLayout, transition)
-        animator.start()
-
-        return Pair(animator, transition)
     }
 }

@@ -2,6 +2,7 @@ package com.xdd.elevatorservicedemo.ui.elevator
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.xddlib.analysis.Tm
 import com.xdd.elevatorservicedemo.model.ElevatorService
 import com.xdd.elevatorservicedemo.model.Passenger
 import java.util.*
@@ -34,8 +35,6 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
 
     fun startRandomPassenger(start: Boolean) {
         coordinateGenerator = if (start) {
-            elevatorService.start()
-
             val config = elevatorService.config
             Timer().scheduleAtFixedRate(0, 5000) {
 
