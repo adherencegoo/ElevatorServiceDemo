@@ -30,7 +30,7 @@
             android:id="@+id/textDestFloor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@{passenger.toFloor}"
+            android:text="@{passenger.toFloor.idToName()}"
             tools:text="Passenger dest floor" />
     </LinearLayout>
 </layout>

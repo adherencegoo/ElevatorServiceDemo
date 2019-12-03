@@ -10,8 +10,9 @@ class Floor(id: Int) : Room<Direction>(id) {
         }
     }
 
-    override fun getPassengerKey(passenger: Passenger): Direction =
-        if (passenger.toFloor > id) Direction.UP else Direction.DOWN
+    override fun getPassengerKey(passenger: Passenger): Direction = passenger.direction.also {
+        assert(it != Direction.NONE)
+    }
 
     override fun idToName(): String = floorName(id)
 

@@ -22,8 +22,8 @@ class ElevatorService(val config: Config) {
 
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
 
-    fun newPassenger(passenger: Passenger) {
-        getFloor(passenger.fromFloor).addPassenger(passenger)
+    // xdd: remove this, and use listener pattern
+    fun onNewPassenger() {
         elevators.forEach(Elevator::move)
     }
 
@@ -34,7 +34,7 @@ class ElevatorService(val config: Config) {
     )
 
     fun getPassengerContent(passenger: Passenger) = "(${passenger.name()}) " +
-            getFloor(passenger.fromFloor).idToName() +
-            directionSymbolMap[Direction.infer(passenger.fromFloor, passenger.toFloor)] +
-            getFloor(passenger.toFloor).idToName()
+            passenger.fromFloor.idToName() +
+            directionSymbolMap[passenger.direction] +
+            passenger.toFloor.idToName()
 }

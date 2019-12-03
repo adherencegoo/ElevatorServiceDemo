@@ -87,7 +87,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             }
         }
 
-    override fun getPassengerKey(passenger: Passenger): Floor = service.getFloor(passenger.toFloor)
+    override fun getPassengerKey(passenger: Passenger): Floor = passenger.toFloor
 
     fun move() {
         realMovement = getNextMovement()

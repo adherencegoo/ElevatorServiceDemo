@@ -2,7 +2,6 @@ package com.xdd.elevatorservicedemo.ui.elevator
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.xddlib.analysis.Tm
 import com.xdd.elevatorservicedemo.model.ElevatorService
 import com.xdd.elevatorservicedemo.model.Passenger
 import java.util.*
@@ -56,7 +55,10 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
             toFloor = random.nextInt(floorCount) + baseFloor
         } while (fromFloor == toFloor)
 
-        return Passenger(fromFloor, toFloor).also { elevatorService.newPassenger(it) }
+        return Passenger(elevatorService.getFloor(fromFloor), elevatorService.getFloor(toFloor))
+            .also {
+                elevatorService.onNewPassenger()
+            }
     }
 
     override fun onCleared() {
