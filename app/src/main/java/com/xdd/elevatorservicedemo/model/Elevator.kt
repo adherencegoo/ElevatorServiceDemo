@@ -55,8 +55,11 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
                 field = value
                 _liveFloor.postValue(value)
 
-                if (field == realMovement?.toFloor) {
-                    arriveFloor(realMovement!!)
+                // When floor changed, if currentFloor == targetFloor, then arrive
+                realMovement?.let {
+                    if (field == it.toFloor) {
+                        arriveFloor(it)
+                    }
                 }
             }
         }
@@ -80,10 +83,18 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
     val liveMovement: LiveData<Movement> = _liveMovement
     private var realMovement: Movement? = null
         private set(value) {
-            if (field?.toFloor != value?.toFloor) { // Only care about `toFloor` change
+            val differentDestFloor = field?.toFloor != value?.toFloor
+            // When movement changed, if currentFloor == targetFloor, then arrive
+            val alreadyAtDestFloor = realFloor == value?.toFloor
+
+            if (differentDestFloor || alreadyAtDestFloor) {
                 Lg.become("realMovement", field, value).printLog(Lg.Type.I)
                 field = value
                 _liveMovement.postValue(value)
+
+                if (alreadyAtDestFloor) {
+                    arriveFloor(value!!)
+                }
             }
         }
 
@@ -136,7 +147,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
                 CandidateRequest(currentMovement.reverse(), base..top),
                 CandidateRequest(currentMovement, top downTo currentFloorId + 1)
             )
-        }?.takeIf { it.toFloor != realFloor }
+        }
 
         realDirection = movement?.let {
             Direction.infer(realFloor.id, it.toFloor.id)

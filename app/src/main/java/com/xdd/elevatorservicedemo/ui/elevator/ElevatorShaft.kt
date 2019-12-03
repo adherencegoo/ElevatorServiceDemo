@@ -121,8 +121,10 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
 
         // When movement changed, cancel old transition and start a new one
         elevator.liveMovement.observeForever { nullableMovement ->
-            TransitionManager.endTransitions(shaftBinding.elevatorShaft)
-            nullableMovement?.let {
+            nullableMovement?.takeIf {
+                it.fromFloor != it.toFloor
+            }?.let {
+                TransitionManager.endTransitions(shaftBinding.elevatorShaft)
                 MoveAnimation(it)
             }
         }
