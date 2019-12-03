@@ -3,11 +3,15 @@ package com.xdd.elevatorservicedemo.ui.elevator
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.lifecycle.LifecycleOwner
+import androidx.recyclerview.widget.RecyclerView
 import com.xdd.elevatorservicedemo.databinding.PassengerViewBinding
 import com.xdd.elevatorservicedemo.model.Passenger
 import com.xdd.elevatorservicedemo.ui.RecyclerBindingAdapter
 
 class PassengerAdapter : RecyclerBindingAdapter<Passenger, PassengerViewBinding>() {
+    companion object {
+        val viewPool = RecyclerView.RecycledViewPool()
+    }
 
     class ViewHolder(binding: PassengerViewBinding) :
         RecyclerBindingAdapter.ViewHolder<Passenger, PassengerViewBinding>(binding) {

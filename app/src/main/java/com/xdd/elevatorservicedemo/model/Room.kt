@@ -1,5 +1,7 @@
 package com.xdd.elevatorservicedemo.model
 
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import com.example.xddlib.presentation.Lg
 
 
@@ -9,17 +11,32 @@ import com.example.xddlib.presentation.Lg
 abstract class Room<K>(val id: Int) {
     private val passengers = HashMap<K, MutableList<Passenger>>()
 
+    private val livePassengerMap = MutableLiveData<HashMap<K, MutableList<Passenger>>>()
+
+    val livePassengerList = Transformations.switchMap(livePassengerMap) { passengerMap ->
+
+        val passengerList: List<Passenger> =
+            passengerMap?.values?.fold(mutableListOf()) { all, part ->
+                all += part
+                all
+            } ?: emptyList()
+        MutableLiveData(passengerList)
+    }
+
+    private fun notifyPassengerMapUpdated() = livePassengerMap.postValue(passengers)
+
     abstract fun getPassengerKey(passenger: Passenger): K
 
     open fun idToName() = id.toString()
 
     fun addPassenger(passenger: Passenger) {
         passengers.getOrPut(getPassengerKey(passenger), { mutableListOf() }) += passenger
+        notifyPassengerMapUpdated()
         Lg.i(this, passenger)
     }
 
     fun removePassengers(key: K): List<Passenger> {
-        return passengers.remove(key) ?: emptyList()
+        return passengers.remove(key)?.also { notifyPassengerMapUpdated() } ?: emptyList()
     }
 
     fun hasPassengers(key: K): Boolean {
@@ -30,6 +47,6 @@ abstract class Room<K>(val id: Int) {
     fun hasAnyPassengers() = passengers.isNotEmpty()
 
     override fun toString(): String {
-        return Lg.toNoPackageSimpleString(this, true) + ":{ id:$id }"
+        return Lg.toNoPackageSimpleString(this, true) + ":{ id:${idToName()} }"
     }
 }

@@ -70,7 +70,7 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
             ConstraintSet().apply {
                 clone(shaftLayout)
                 connectVertical(
-                    shaftBinding.elevatorRoomBinding.elevatorRoom,
+                    elevatorRoom.roomLayout,
                     floorBottomGuidelines[targetFloorIndex + 1],
                     floorBottomGuidelines[targetFloorIndex]
                 )
@@ -95,6 +95,7 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
         override fun onTransitionStart(p0: Transition?) = boundAnimator.start()
     }
 
+    private val elevatorRoom = ElevatorRoom(shaftBinding.elevatorRoomBinding)
     // key: floor index
     private lateinit var floorBottomGuidelines: List<Guideline>
     private lateinit var serviceConfig: ElevatorService.Config

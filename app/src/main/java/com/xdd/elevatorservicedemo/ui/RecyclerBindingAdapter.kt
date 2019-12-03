@@ -39,11 +39,9 @@ abstract class RecyclerBindingAdapter<T : Any, VDB : ViewDataBinding> :
     abstract fun newDiffCallback(oldList: List<T>, newList: List<T>): DiffCallback<T>
 
     open fun postData(data: List<T>) {
-        val origData = ArrayList(data)
+        val result = DiffUtil.calculateDiff(newDiffCallback(this.data, data))
         this.data.clear()
         this.data += data
-
-        DiffUtil.calculateDiff(newDiffCallback(origData, this.data))
-            .dispatchUpdatesTo(this)
+        result.dispatchUpdatesTo(this)
     }
 }

@@ -17,6 +17,7 @@ class FloorAdapter(floors: List<Floor>) : RecyclerBindingAdapter<Floor, FloorRoo
         RecyclerBindingAdapter.ViewHolder<Floor, FloorRoomBinding>(binding) {
         override fun bindData(data: Floor) {
             binding.floor = data
+            binding.passengerRecycler.bindPassengerRoom(data)
         }
     }
 
@@ -32,6 +33,7 @@ class FloorAdapter(floors: List<Floor>) : RecyclerBindingAdapter<Floor, FloorRoo
         FloorRoomBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             .apply {
                 lifecycleOwner = parent.context as LifecycleOwner
+                passengerRecycler.initPassengerRecycler(parent.context)
             })
 
     override fun postData(data: List<Floor>) {
