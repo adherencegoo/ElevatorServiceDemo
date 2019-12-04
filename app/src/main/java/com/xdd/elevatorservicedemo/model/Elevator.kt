@@ -3,7 +3,7 @@ package com.xdd.elevatorservicedemo.model
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
-import com.xdd.elevatorservicedemo.nonNullMinBy
+import com.xdd.elevatorservicedemo.utils.nonNullMinBy
 import java.util.*
 import kotlin.math.abs
 

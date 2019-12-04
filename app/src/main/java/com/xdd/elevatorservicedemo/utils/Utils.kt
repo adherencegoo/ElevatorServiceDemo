@@ -1,4 +1,4 @@
-package com.xdd.elevatorservicedemo
+package com.xdd.elevatorservicedemo.utils
 
 import android.view.View
 import android.view.ViewTreeObserver

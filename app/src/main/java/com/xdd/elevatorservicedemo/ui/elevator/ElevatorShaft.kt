@@ -10,7 +10,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.constraintlayout.widget.Guideline
-import com.xdd.elevatorservicedemo.addDisposableOnGlobalLayoutListener
+import com.xdd.elevatorservicedemo.utils.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.databinding.ElevatorShaftBinding
 import com.xdd.elevatorservicedemo.model.Elevator
 import com.xdd.elevatorservicedemo.model.ElevatorService

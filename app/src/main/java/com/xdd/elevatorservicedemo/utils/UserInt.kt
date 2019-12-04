@@ -1,8 +1,6 @@
-package com.xdd.elevatorservicedemo.model
+package com.xdd.elevatorservicedemo.utils
 
 import androidx.databinding.ObservableField
-import com.xdd.elevatorservicedemo.addOnPropertyChanged
-import com.xdd.elevatorservicedemo.nullableToInt
 
 class UserInt(initialValue: Int = 0) {
     val observedString = ObservableField<String>(initialValue.toString()).apply {

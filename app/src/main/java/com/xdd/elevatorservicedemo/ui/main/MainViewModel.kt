@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import com.xdd.elevatorservicedemo.R
 import com.xdd.elevatorservicedemo.model.ElevatorService
-import com.xdd.elevatorservicedemo.model.UserInt
+import com.xdd.elevatorservicedemo.utils.UserInt
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorFragment
 
 class MainViewModel : ViewModel() {

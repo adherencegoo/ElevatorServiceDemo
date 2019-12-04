@@ -1,6 +1,6 @@
 package com.xdd.elevatorservicedemo.ui.elevator
 
-import com.xdd.elevatorservicedemo.addOnPropertyChanged
+import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
 import com.xdd.elevatorservicedemo.databinding.ElevatorRoomBinding
 
 class ElevatorRoom(roomBinding: ElevatorRoomBinding) {
