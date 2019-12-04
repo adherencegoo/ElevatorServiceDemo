@@ -143,9 +143,11 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         val currentFloor = realFloor
         val currentDirection = realDirection
 
-        pendingOnArriveActions.offer {
-            realDoorState = DoorState.OPENING
-            realDoorState.animationDuration
+        if (service.config.doorAnimationEnabled) {
+            pendingOnArriveActions.offer {
+                realDoorState = DoorState.OPENING
+                realDoorState.animationDuration
+            }
         }
 
         pendingOnArriveActions.offer {
@@ -169,9 +171,11 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             if (fromFloorToElevator.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
         }
 
-        pendingOnArriveActions.offer {
-            realDoorState = DoorState.CLOSING
-            realDoorState.animationDuration
+        if (service.config.doorAnimationEnabled) {
+            pendingOnArriveActions.offer {
+                realDoorState = DoorState.CLOSING
+                realDoorState.animationDuration
+            }
         }
 
         pendingOnArriveActions.offer {

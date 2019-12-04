@@ -9,7 +9,8 @@ class ElevatorService(val config: Config) {
         val baseFloor: Int,
         val floorCount: Int,
         val elevatorCount: Int,
-        val animationDurationPerFloor: Long
+        val animationDurationPerFloor: Long,
+        val doorAnimationEnabled: Boolean
     ) : Serializable {
         val topFloor = baseFloor + floorCount - 1
 
