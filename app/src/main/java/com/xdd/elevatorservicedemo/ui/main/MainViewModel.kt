@@ -12,6 +12,7 @@ class MainViewModel : ViewModel() {
     val baseFloor = UserInt()
     val floorCount = UserInt()
     val elevatorCount = UserInt(1)
+    val animationDurationPerFloor = UserInt(1000)
 
     fun createService(view: View) {
         val activity = view.context as FragmentActivity
@@ -19,7 +20,8 @@ class MainViewModel : ViewModel() {
         val config = ElevatorService.Config(
             baseFloor.intValue,
             floorCount.intValue,
-            elevatorCount.intValue
+            elevatorCount.intValue,
+            animationDurationPerFloor.intValue.toLong()
         )
         activity.supportFragmentManager.beginTransaction()
             .replace(R.id.container, ElevatorFragment.newInstance(config))
