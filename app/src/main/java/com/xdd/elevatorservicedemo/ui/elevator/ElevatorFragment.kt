@@ -95,7 +95,7 @@ class ElevatorFragment : Fragment() {
                 val passenger = viewModel.newPassenger()
                 Toast.makeText(
                     context,
-                    viewModel.elevatorService.getPassengerContent(passenger),
+                    passenger.getContentString(),
                     Toast.LENGTH_LONG
                 ).show()
                 true

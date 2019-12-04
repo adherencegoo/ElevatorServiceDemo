@@ -24,4 +24,7 @@ data class Passenger(val fromFloor: Floor, val toFloor: Floor) {
     val color = Color.rgb(random.nextFloat(), random.nextFloat(), random.nextFloat())
 
     fun name() = "p$id"
+
+    fun getContentString() =
+        "(${name()}) " + fromFloor.idToName() + direction.symbol + toFloor.idToName()
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
     <data>
@@ -9,28 +10,66 @@
             type="com.xdd.elevatorservicedemo.model.Passenger" />
     </data>
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/passengerRoot"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:background="@{passenger.color}"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@+id/textName"
+        app:layout_constraintTop_toBottomOf="@+id/textName">
 
         <TextView
             android:id="@+id/textName"
+            style="@style/ShadowTextViewStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="@{passenger.color}"
-            android:shadowColor="@android:color/white"
-            android:shadowDx="10"
-            android:shadowDy="10"
-            android:shadowRadius="1"
             android:text="@{passenger.name()}"
+            app:layout_constraintBottom_toTopOf="@+id/textDirection"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="Passenger name" />
 
         <TextView
+            android:id="@+id/textSrcFloor"
+            style="@style/ShadowTextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{passenger.fromFloor.idToName()}"
+            app:layout_constraintBottom_toBottomOf="@+id/textDirection"
+            app:layout_constraintEnd_toStartOf="@+id/textDirection"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/textDirection"
+            tools:text="Passenger src floor" />
+
+        <TextView
+            android:id="@+id/textDirection"
+            style="@style/ShadowTextViewStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{passenger.direction.symbol}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/textDestFloor"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/textSrcFloor"
+            app:layout_constraintTop_toBottomOf="@+id/textName"
+            tools:text="Passenger direction" />
+
+        <TextView
             android:id="@+id/textDestFloor"
+            style="@style/ShadowTextViewStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@{passenger.toFloor.idToName()}"
+            app:layout_constraintBottom_toBottomOf="@+id/textDirection"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/textDirection"
+            app:layout_constraintTop_toTopOf="@+id/textDirection"
             tools:text="Passenger dest floor" />
-    </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

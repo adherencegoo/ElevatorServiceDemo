@@ -1,9 +1,9 @@
 package com.xdd.elevatorservicedemo.model
 
-enum class Direction(val offset: Int) {
-    NONE(0),
-    UP(1),
-    DOWN(-1);
+enum class Direction(val offset: Int, val symbol: String) {
+    NONE(0, "－"),
+    UP(1, "↗"),
+    DOWN(-1, "↘");
 
     companion object {
         fun infer(from: Int, to: Int) = when {

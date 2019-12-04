@@ -26,15 +26,4 @@ class ElevatorService(val config: Config) {
     fun onNewPassenger() {
         elevators.forEach(Elevator::move)
     }
-
-    private val directionSymbolMap = mapOf(
-        Direction.UP to "↗",
-        Direction.DOWN to "↘",
-        Direction.NONE to "－"
-    )
-
-    fun getPassengerContent(passenger: Passenger) = "(${passenger.name()}) " +
-            passenger.fromFloor.idToName() +
-            directionSymbolMap[passenger.direction] +
-            passenger.toFloor.idToName()
 }
