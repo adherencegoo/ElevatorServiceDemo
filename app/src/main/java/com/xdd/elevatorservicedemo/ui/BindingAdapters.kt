@@ -4,6 +4,8 @@ import android.widget.ImageView
 import androidx.databinding.BindingAdapter
 import com.xdd.elevatorservicedemo.R
 import com.xdd.elevatorservicedemo.model.Direction
+import com.xdd.elevatorservicedemo.model.DoorState
+import pl.droidsonroids.gif.GifImageView
 
 @BindingAdapter("app:bindDirection")
 fun ImageView.bindDirection(direction: Direction?) {
@@ -14,4 +16,9 @@ fun ImageView.bindDirection(direction: Direction?) {
             else -> android.R.color.transparent
         }
     )
+}
+
+@BindingAdapter("app:bindDoorState")
+fun GifImageView.bindDoorState(doorState: DoorState?) {
+    setImageResource((doorState ?: DoorState.CLOSED).resId)
 }

@@ -8,6 +8,10 @@ import java.util.*
 import kotlin.math.abs
 
 class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) {
+    companion object {
+        private const val DELAY_FOR_PASSENGER_ANIMATION = 1000L
+    }
+
     /**
      * a target floor and a future movement after arriving at that floor
      * */
@@ -46,6 +50,14 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             }
         }
     }
+
+    private val _liveDoorState = MutableLiveData(DoorState.CLOSED)
+    val liveDoorState: LiveData<DoorState> = _liveDoorState
+    private var realDoorState = DoorState.CLOSED
+        private set(value) {
+            field = value
+            _liveDoorState.postValue(value)
+        }
 
     private val _liveFloor = MutableLiveData(service.floors.first())
     val liveFloor: LiveData<Floor> = _liveFloor
@@ -102,18 +114,18 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
     override fun getPassengerKey(passenger: Passenger): Floor = passenger.toFloor
 
     /**
-     * Boolean: true if this action has done something
+     * Long: delayed time for animation of this action
      * */
-    private val pendingOnArriveActions = ArrayDeque<() -> Boolean>()
+    private val pendingOnArriveActions = ArrayDeque<() -> Long>()
 
     private fun consumeOnArriveAction() {
         // break if null or true
         @Suppress("ControlFlowWithEmptyBody")
         while (true) {
-            val somethingDone = pendingOnArriveActions.poll()?.invoke() ?: break
-            if (somethingDone) {
+            val delay = pendingOnArriveActions.poll()?.invoke() ?: break
+            if (delay > 0) {
                 //xdd: how to prevent postDelayed, and listen to end of PassengerAdapter animation
-                service.uiHandler.postDelayed(this::consumeOnArriveAction, 1000)
+                service.uiHandler.postDelayed(this::consumeOnArriveAction, delay)
                 break
             }
         }
@@ -131,10 +143,20 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         val currentFloor = realFloor
         val currentDirection = realDirection
 
+        pendingOnArriveActions.offer {
+            realDoorState = DoorState.OPENING
+            realDoorState.animationDuration
+        }
+
+        pendingOnArriveActions.offer {
+            realDoorState = DoorState.OPEN
+            realDoorState.animationDuration
+        }
+
         // leave elevator
         pendingOnArriveActions.offer {
-            removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
-                .isNotEmpty()
+            val passengers = removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
+            if (passengers.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
         }
 
         pendingOnArriveActions.offer {
@@ -144,12 +166,22 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             // enter elevator
             addPassengers(fromFloorToElevator)
 
-            fromFloorToElevator.isNotEmpty()
+            if (fromFloorToElevator.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
+        }
+
+        pendingOnArriveActions.offer {
+            realDoorState = DoorState.CLOSING
+            realDoorState.animationDuration
+        }
+
+        pendingOnArriveActions.offer {
+            realDoorState = DoorState.CLOSED
+            realDoorState.animationDuration
         }
 
         pendingOnArriveActions.offer {
             move()
-            true
+            0
         }
 
         consumeOnArriveAction()
