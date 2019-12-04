@@ -16,7 +16,7 @@ data class Passenger(val fromFloor: Floor, val toFloor: Floor) {
     val direction = Direction.infer(fromFloor.id, toFloor.id)
 
     init {
-        fromFloor.addPassenger(this)
+        fromFloor.addPassengers(listOf(this))
     }
 
     val id = generateId()

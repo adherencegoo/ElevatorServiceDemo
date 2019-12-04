@@ -1,5 +1,7 @@
 package com.xdd.elevatorservicedemo.model
 
+import android.os.Handler
+import android.os.Looper
 import java.io.Serializable
 
 class ElevatorService(val config: Config) {
@@ -19,6 +21,9 @@ class ElevatorService(val config: Config) {
     val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
 
     val elevators = List(config.elevatorCount) { Elevator(it, this) }
+
+    val uiHandler = Handler(Looper.getMainLooper())
+
 
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
 

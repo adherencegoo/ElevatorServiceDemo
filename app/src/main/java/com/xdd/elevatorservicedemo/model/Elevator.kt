@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.nonNullMinBy
+import java.util.*
 import kotlin.math.abs
 
 class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) {
@@ -100,6 +101,24 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
 
     override fun getPassengerKey(passenger: Passenger): Floor = passenger.toFloor
 
+    /**
+     * Boolean: true if this action has done something
+     * */
+    private val pendingOnArriveActions = ArrayDeque<() -> Boolean>()
+
+    private fun consumeOnArriveAction() {
+        // break if null or true
+        @Suppress("ControlFlowWithEmptyBody")
+        while (true) {
+            val somethingDone = pendingOnArriveActions.poll()?.invoke() ?: break
+            if (somethingDone) {
+                //xdd: how to prevent postDelayed, and listen to end of PassengerAdapter animation
+                service.uiHandler.postDelayed(this::consumeOnArriveAction, 1000)
+                break
+            }
+        }
+    }
+
     fun move() {
         realMovement = getNextMovement()
     }
@@ -113,17 +132,27 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         val currentDirection = realDirection
 
         // leave elevator
-        removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
+        pendingOnArriveActions.offer {
+            removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
+                .isNotEmpty()
+        }
 
-        // leave floor
-        currentFloor.removePassengers(currentDirection)
-            .also { Lg.d("($currentDirection) leave $currentFloor, enter $this: $it") }
+        pendingOnArriveActions.offer {
+            // leave floor
+            val fromFloorToElevator = currentFloor.removePassengers(currentDirection)
+                .also { Lg.d("($currentDirection) leave $currentFloor, enter $this: $it") }
             // enter elevator
-            .forEach {
-                addPassenger(it)
-            }
+            addPassengers(fromFloorToElevator)
 
-        move()
+            fromFloorToElevator.isNotEmpty()
+        }
+
+        pendingOnArriveActions.offer {
+            move()
+            true
+        }
+
+        consumeOnArriveAction()
     }
 
     /**

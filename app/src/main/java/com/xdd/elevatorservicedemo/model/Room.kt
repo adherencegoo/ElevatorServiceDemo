@@ -29,10 +29,12 @@ abstract class Room<K>(val id: Int) {
 
     open fun idToName() = id.toString()
 
-    fun addPassenger(passenger: Passenger) {
-        passengers.getOrPut(getPassengerKey(passenger), { mutableListOf() }) += passenger
+    fun addPassengers(newPassengers: List<Passenger>) {
+        newPassengers.forEach {
+            passengers.getOrPut(getPassengerKey(it), { mutableListOf() }) += it
+        }
         notifyPassengerMapUpdated()
-        Lg.i(this, passenger)
+        Lg.i(this, newPassengers)
     }
 
     fun removePassengers(key: K): List<Passenger> {
