@@ -1,7 +1,5 @@
 package com.xdd.elevatorservicedemo.model
 
-import android.os.Handler
-import android.os.Looper
 import java.io.Serializable
 
 class ElevatorService(val config: Config) {
@@ -23,13 +21,10 @@ class ElevatorService(val config: Config) {
 
     val elevators = List(config.elevatorCount) { Elevator(it, this) }
 
-    val uiHandler = Handler(Looper.getMainLooper())
-
-
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
 
     // xdd: remove this, and use listener pattern
     fun onNewPassenger() {
-        elevators.forEach(Elevator::move)
+        elevators.forEach(Elevator::triggerMove)
     }
 }

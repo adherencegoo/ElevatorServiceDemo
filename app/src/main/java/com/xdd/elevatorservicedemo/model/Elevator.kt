@@ -1,5 +1,7 @@
 package com.xdd.elevatorservicedemo.model
 
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
@@ -50,6 +52,8 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             }
         }
     }
+
+    private val uiHandler = Handler(Looper.getMainLooper())
 
     private val _liveDoorState = MutableLiveData(DoorState.CLOSED)
     val liveDoorState: LiveData<DoorState> = _liveDoorState
@@ -118,21 +122,35 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
      * */
     private val pendingOnArriveActions = ArrayDeque<() -> Long>()
 
+    private fun supplyOnArriveAction(action: () -> Long, allowDuplicate: Boolean = true) {
+        synchronized(this) {
+            if (allowDuplicate || !pendingOnArriveActions.contains(action)) {
+                pendingOnArriveActions.offer(action)
+            }
+        }
+    }
+
     private fun consumeOnArriveAction() {
-        // break if null or true
-        @Suppress("ControlFlowWithEmptyBody")
+        // remove all events
+        uiHandler.removeCallbacksAndMessages(null)
         while (true) {
-            val delay = pendingOnArriveActions.poll()?.invoke() ?: break
+            val delay = synchronized(this) { pendingOnArriveActions.poll() }?.invoke() ?: break
             if (delay > 0) {
                 //xdd: how to prevent postDelayed, and listen to end of PassengerAdapter animation
-                service.uiHandler.postDelayed(this::consumeOnArriveAction, delay)
+                uiHandler.postDelayed(this::consumeOnArriveAction, delay)
                 break
             }
         }
     }
 
-    fun move() {
+    private val actionMove = {
         realMovement = getNextMovement()
+        0L
+    }
+
+    fun triggerMove() {
+        supplyOnArriveAction(actionMove, false)
+        consumeOnArriveAction()
     }
 
     private fun arriveFloor(movement: Movement) {
@@ -144,24 +162,24 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         val currentDirection = realDirection
 
         if (service.config.doorAnimationEnabled) {
-            pendingOnArriveActions.offer {
+            supplyOnArriveAction({
                 realDoorState = DoorState.OPENING
                 realDoorState.animationDuration
-            }
+            })
         }
 
-        pendingOnArriveActions.offer {
+        supplyOnArriveAction({
             realDoorState = DoorState.OPEN
             realDoorState.animationDuration
-        }
+        })
 
         // leave elevator
-        pendingOnArriveActions.offer {
+        supplyOnArriveAction({
             val passengers = removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
             if (passengers.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
-        }
+        })
 
-        pendingOnArriveActions.offer {
+        supplyOnArriveAction({
             // leave floor
             val fromFloorToElevator = currentFloor.removePassengers(currentDirection)
                 .also { Lg.d("($currentDirection) leave $currentFloor, enter $this: $it") }
@@ -169,26 +187,21 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             addPassengers(fromFloorToElevator)
 
             if (fromFloorToElevator.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
-        }
+        })
 
         if (service.config.doorAnimationEnabled) {
-            pendingOnArriveActions.offer {
+            supplyOnArriveAction({
                 realDoorState = DoorState.CLOSING
                 realDoorState.animationDuration
-            }
+            })
         }
 
-        pendingOnArriveActions.offer {
+        supplyOnArriveAction({
             realDoorState = DoorState.CLOSED
             realDoorState.animationDuration
-        }
+        })
 
-        pendingOnArriveActions.offer {
-            move()
-            0
-        }
-
-        consumeOnArriveAction()
+        triggerMove()
     }
 
     /**
