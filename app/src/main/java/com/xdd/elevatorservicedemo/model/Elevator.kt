@@ -110,14 +110,14 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         }
 
         val currentFloor = realFloor
-        val currentMovement = realDirection
+        val currentDirection = realDirection
 
         // leave elevator
         removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
 
         // leave floor
-        currentFloor.removePassengers(currentMovement)
-            .also { Lg.d("($currentMovement) leave $currentFloor, enter $this: $it") }
+        currentFloor.removePassengers(currentDirection)
+            .also { Lg.d("($currentDirection) leave $currentFloor, enter $this: $it") }
             // enter elevator
             .forEach {
                 addPassenger(it)
