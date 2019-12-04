@@ -49,5 +49,18 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/elevatorName" />
+
+        <ImageView
+            android:id="@+id/directionImage"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp"
+            app:bindDirection="@{elevator.liveDirection}"
+            app:layout_constraintBottom_toTopOf="@+id/passengerRecycler"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintStart_toEndOf="@+id/currentFloor"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
