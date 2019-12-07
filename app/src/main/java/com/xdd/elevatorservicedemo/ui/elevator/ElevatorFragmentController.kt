@@ -14,8 +14,13 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
     BindingController<ElevatorFragmentBinding, ConstraintLayout>(fragmentBinding) {
 
     private val elevatorShaftController = ElevatorShaftController(binding.elevatorShaftBinding)
+    private var canNotifyScrollableFloors = true
+    private var canNotifyScrollableShaft = true
 
     init {
+        val scrollableFloors = binding.floorsView
+        val scrollableShaft = binding.scrollableElevatorShaft
+
         binding.addOnPropertyChanged { localBinding, propertyId ->
             if (propertyId == BR.viewModel) {
                 val localViewModel = localBinding.viewModel!!
@@ -26,7 +31,11 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
                     // when floorsView is fully loaded, update height of elevatorShaft
                     addDisposableOnGlobalLayoutListener {
                         // let floorsView and elevatorShaft have the same height
-                        elevatorShaftController.setTotalHeight(computeVerticalScrollRange())
+                        val buildingHeight = computeVerticalScrollRange()
+                        elevatorShaftController.setTotalHeight(buildingHeight) {
+                            // When height of the shaft is updated, scroll to the bottom
+                            scrollableShaft.scrollTo(0, buildingHeight - scrollableShaft.height)
+                        }
                     }
 
                     adapter = FloorAdapter(localViewModel.elevatorService.floors)
@@ -36,6 +45,25 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
                     addItemDecoration(DividerItemDecoration(context, layoutOrientation))
                 }
             }
+        }
+
+        scrollableFloors.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                canNotifyScrollableFloors = false
+                if (canNotifyScrollableShaft) {
+                    scrollableShaft.scrollBy(dx, dy)
+                }
+                canNotifyScrollableFloors = true
+            }
+        })
+
+        scrollableShaft.setOnScrollChangeListener { _, scrollX, scrollY, oldScrollX, oldScrollY ->
+            canNotifyScrollableShaft = false
+            if (canNotifyScrollableFloors) {
+                scrollableFloors.scrollBy(scrollX - oldScrollX, scrollY - oldScrollY)
+            }
+            canNotifyScrollableShaft = true
         }
     }
 }

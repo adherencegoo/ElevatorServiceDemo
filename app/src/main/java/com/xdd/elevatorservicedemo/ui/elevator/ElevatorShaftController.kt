@@ -129,11 +129,12 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
         serviceConfig = config
     }
 
-    fun setTotalHeight(totalHeight: Int) {
+    fun setTotalHeight(totalHeight: Int, onUpdateFinished: (() -> Unit)?) {
         binding.elevatorShaftBg.apply {
             // when height of elevatorShaft is updated, setup guidelines in elevatorShaft
             addDisposableOnGlobalLayoutListener {
                 initElevatorShaftGuidelines()
+                onUpdateFinished?.invoke()
             }
 
             val params = layoutParams
