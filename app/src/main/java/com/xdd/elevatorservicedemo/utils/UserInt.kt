@@ -4,8 +4,8 @@ import androidx.databinding.ObservableField
 
 class UserInt(initialValue: Int = 0) {
     val observedString = ObservableField<String>(initialValue.toString()).apply {
-        addOnPropertyChanged {
-            intValue = it.get().nullableToInt()
+        addOnPropertyChanged { observable, _ ->
+            intValue = observable.get().nullableToInt()
         }
     }
 

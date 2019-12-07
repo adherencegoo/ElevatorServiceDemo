@@ -5,10 +5,10 @@ import android.view.ViewTreeObserver
 import androidx.databinding.Observable
 import java.lang.NumberFormatException
 
-inline fun <reified T : Observable> T.addOnPropertyChanged(crossinline callback: (T) -> Unit) =
+inline fun <reified T : Observable> T.addOnPropertyChanged(crossinline callback: (T, Int) -> Unit) =
     object : Observable.OnPropertyChangedCallback() {
-        override fun onPropertyChanged(observable: Observable?, i: Int) =
-            callback(observable as T)
+        override fun onPropertyChanged(observable: Observable?, propertyId: Int) =
+            callback(observable as T, propertyId)
     }.also {
         addOnPropertyChangedCallback(it)
     }
