@@ -10,12 +10,18 @@ import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.constraintlayout.widget.Guideline
+import androidx.lifecycle.Observer
+import com.xdd.elevatorservicedemo.BR
 import com.xdd.elevatorservicedemo.utils.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.databinding.ElevatorShaftBinding
 import com.xdd.elevatorservicedemo.model.Elevator
 import com.xdd.elevatorservicedemo.model.ElevatorService
+import com.xdd.elevatorservicedemo.ui.BindingController
+import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
 
-class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
+class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
+    BindingController<ElevatorShaftBinding, ConstraintLayout>(shaftBinding) {
+
     companion object {
         private val animationInterpolator = DecelerateInterpolator()
 
@@ -55,7 +61,7 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
                 interpolator = animationInterpolator
                 duration = myDuration
                 addUpdateListener {
-                    elevator.setRealFloorId(it.animatedValue as Int)
+                    binding.elevator!!.setRealFloorId(it.animatedValue as Int)
                 }
             }
 
@@ -65,19 +71,18 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
             addListener(LiveTransitionListener(animator))
 
             // Actually change location of ElevatorRoom
-            val shaftLayout = shaftBinding.elevatorShaft
             val targetFloorIndex = serviceConfig.floorIdToIndex(targetFloorId)
             ConstraintSet().apply {
-                clone(shaftLayout)
+                clone(typedRoot)
                 connectVertical(
-                    elevatorRoom.roomLayout,
+                    elevatorRoomController.typedRoot,
                     floorBottomGuidelines[targetFloorIndex + 1],
                     floorBottomGuidelines[targetFloorIndex]
                 )
-                applyTo(shaftLayout)
+                applyTo(typedRoot)
             }
 
-            TransitionManager.beginDelayedTransition(shaftLayout, this)
+            TransitionManager.beginDelayedTransition(typedRoot, this)
         }
     }
 
@@ -95,45 +100,50 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
         override fun onTransitionStart(p0: Transition?) = boundAnimator.start()
     }
 
-    private val elevatorRoom = ElevatorRoom(shaftBinding.elevatorRoomBinding)
+    private val elevatorRoomController = ElevatorRoomController(binding.elevatorRoomBinding)
     // key: floor index
     private lateinit var floorBottomGuidelines: List<Guideline>
     private lateinit var serviceConfig: ElevatorService.Config
-    private lateinit var elevator: Elevator
 
-    fun init(
-        viewModel: ElevatorViewModel,
-        elevatorIndex: Int,
-        height: Int
-    ) {
-        serviceConfig = viewModel.elevatorService.config
-        elevator = viewModel.elevatorService.elevators[elevatorIndex]
+    init {
+        binding.addOnPropertyChanged { localBinding, propertyId ->
+            if (propertyId == BR.elevator) {
+                val localElevator = localBinding.elevator!!
 
-        shaftBinding.elevatorShaftBg.apply {
+                // When movement changed, cancel old transition and start a new one
+                localElevator.liveMovement.observe(
+                    localBinding.lifecycleOwner!!,
+                    Observer { nullableMovement ->
+                        nullableMovement?.takeIf {
+                            it.fromFloor != it.toFloor
+                        }?.let {
+                            TransitionManager.endTransitions(typedRoot)
+                            MoveAnimation(it)
+                        }
+                    })
+            }
+        }
+    }
+
+    fun setConfig(config: ElevatorService.Config) {
+        serviceConfig = config
+    }
+
+    fun setTotalHeight(totalHeight: Int) {
+        binding.elevatorShaftBg.apply {
             // when height of elevatorShaft is updated, setup guidelines in elevatorShaft
             addDisposableOnGlobalLayoutListener {
                 initElevatorShaftGuidelines()
             }
 
             val params = layoutParams
-            params.height = height
+            params.height = totalHeight
             layoutParams = params
-        }
-
-        // When movement changed, cancel old transition and start a new one
-        elevator.liveMovement.observeForever { nullableMovement ->
-            nullableMovement?.takeIf {
-                it.fromFloor != it.toFloor
-            }?.let {
-                TransitionManager.endTransitions(shaftBinding.elevatorShaft)
-                MoveAnimation(it)
-            }
         }
     }
 
     private fun initElevatorShaftGuidelines() {
-        val parentLayout = shaftBinding.elevatorShaft
-        val context = parentLayout.context
+        val context = typedRoot.context
 
         val floorCount = serviceConfig.floorCount
         val eachPercentage = 1f / (floorCount)
@@ -151,7 +161,7 @@ class ElevatorShaft(private val shaftBinding: ElevatorShaftBinding) {
                 guidePercent = 1 - it * eachPercentage
             }
 
-            parentLayout.addView(guideline, layoutParams)
+            typedRoot.addView(guideline, layoutParams)
 
             guideline
         }

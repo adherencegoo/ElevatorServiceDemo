@@ -25,20 +25,19 @@ class ElevatorFragment : Fragment() {
         }
     }
 
-    private lateinit var fragmentBinding: ElevatorFragmentBinding
     private lateinit var viewModel: ElevatorViewModel
-    private lateinit var elevatorShaft: ElevatorShaft
+    private lateinit var fragmentController: ElevatorFragmentController
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        fragmentBinding = ElevatorFragmentBinding.inflate(inflater, container, false).apply {
-            lifecycleOwner = this@ElevatorFragment
-        }
+        fragmentController = ElevatorFragmentController(
+            ElevatorFragmentBinding.inflate(inflater, container, false).apply {
+                lifecycleOwner = this@ElevatorFragment
+            })
 
-        elevatorShaft = ElevatorShaft(fragmentBinding.elevatorShaftBinding)
-        return fragmentBinding.root
+        return fragmentController.binding.root
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -47,26 +46,7 @@ class ElevatorFragment : Fragment() {
         val config = arguments?.getSerializable(KEY_ELEVATOR_CONFIG) as ElevatorService.Config
         val factory = ElevatorViewModel.Factory(config)
         viewModel = ViewModelProviders.of(this, factory).get(ElevatorViewModel::class.java)
-
-        fragmentBinding.viewModel = viewModel
-
-        initFloorsView()
-    }
-
-    private fun initFloorsView() {
-        fragmentBinding.floorsView.apply {
-            // when floorsView is fully loaded, update height of elevatorShaft
-            addDisposableOnGlobalLayoutListener {
-                // let floorsView and elevatorShaft have the same height
-                elevatorShaft.init(viewModel, 0, computeVerticalScrollRange())
-            }
-
-            adapter = FloorAdapter(viewModel.elevatorService.floors)
-
-            val layoutOrientation = RecyclerView.VERTICAL
-            layoutManager = LinearLayoutManager(context, layoutOrientation, true)
-            addItemDecoration(DividerItemDecoration(context, layoutOrientation))
-        }
+        fragmentController.binding.viewModel = viewModel
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

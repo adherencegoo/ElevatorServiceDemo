@@ -41,7 +41,7 @@
             <include
                 android:id="@+id/elevatorShaftBinding"
                 layout="@layout/elevator_shaft"
-                bind:viewModel="@{viewModel}" />
+                bind:elevator="@{viewModel.elevatorService.elevators.get(0)}" />
         </ScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

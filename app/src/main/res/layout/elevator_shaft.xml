@@ -4,14 +4,13 @@
     <data>
 
         <variable
-            name="viewModel"
-            type="com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel" />
+            name="elevator"
+            type="com.xdd.elevatorservicedemo.model.Elevator" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/elevatorShaft"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         tools:showIn="@layout/elevator_fragment">
@@ -28,7 +27,7 @@
         <include
             android:id="@+id/elevatorRoomBinding"
             layout="@layout/elevator_room"
-            app:elevator="@{viewModel.elevatorService.elevators.get(0)}" />
+            app:elevator="@{elevator}" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
