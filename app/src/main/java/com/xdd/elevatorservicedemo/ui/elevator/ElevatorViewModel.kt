@@ -56,9 +56,6 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
         } while (fromFloor == toFloor)
 
         return Passenger(elevatorService.getFloor(fromFloor), elevatorService.getFloor(toFloor))
-            .also {
-                elevatorService.onNewPassenger()
-            }
     }
 
     override fun onCleared() {

@@ -19,12 +19,18 @@ class ElevatorService(val config: Config) {
 
     val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
 
-    val elevators = List(config.elevatorCount) { Elevator(it, this) }
+    val elevators = List(config.elevatorCount) {  index ->
+        val elevator = Elevator(index, this)
+
+        // An elevator must observe the event: passenger arrival to all floors
+        floors.forEach {  floor ->
+            floor.livePassengerArrived.observeForever {
+                elevator.triggerMove()
+            }
+        }
+
+        elevator
+    }
 
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
-
-    // xdd: remove this, and use listener pattern
-    fun onNewPassenger() {
-        elevators.forEach(Elevator::triggerMove)
-    }
 }

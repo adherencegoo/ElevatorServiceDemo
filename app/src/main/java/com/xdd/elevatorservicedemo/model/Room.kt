@@ -29,7 +29,7 @@ abstract class Room<K>(val id: Int) {
 
     open fun idToName() = id.toString()
 
-    fun addPassengers(newPassengers: List<Passenger>) {
+    open fun addPassengers(newPassengers: List<Passenger>) {
         newPassengers.forEach {
             passengers.getOrPut(getPassengerKey(it), { mutableListOf() }) += it
         }
