@@ -20,8 +20,8 @@ class MainViewModel : ViewModel() {
     fun createService(view: View) {
         val activity = view.context as FragmentActivity
 
-        if (floorCount.intValue <= 0) {
-            Toast.makeText(activity, "Floor count should be a positive integer", Toast.LENGTH_LONG)
+        if (floorCount.intValue < 2) {
+            Toast.makeText(activity, "Invalid floor count, must >= 2", Toast.LENGTH_LONG)
                 .show()
         } else {
             val config = ElevatorServiceConfig(
