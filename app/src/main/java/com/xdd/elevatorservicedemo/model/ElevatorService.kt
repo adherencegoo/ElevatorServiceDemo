@@ -1,22 +1,8 @@
 package com.xdd.elevatorservicedemo.model
 
 import com.xdd.elevatorservicedemo.utils.CoroutineAsset
-import java.io.Serializable
 
-class ElevatorService(val config: Config, val coroutineAsset: CoroutineAsset) {
-    data class Config(
-        val baseFloor: Int,
-        val floorCount: Int,
-        val elevatorCount: Int,
-        val animationDurationPerFloor: Long,
-        val doorAnimationEnabled: Boolean
-    ) : Serializable {
-        val topFloor = baseFloor + floorCount - 1
-
-        fun floorIdToIndex(floorId: Int) = floorId - baseFloor
-
-        fun indexToFloorId(index: Int) = index + baseFloor
-    }
+class ElevatorService(val config: ElevatorServiceConfig, val coroutineAsset: CoroutineAsset) {
 
     val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
 

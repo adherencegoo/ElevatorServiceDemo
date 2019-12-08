@@ -15,7 +15,7 @@ import com.xdd.elevatorservicedemo.BR
 import com.xdd.elevatorservicedemo.utils.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.databinding.ElevatorShaftBinding
 import com.xdd.elevatorservicedemo.model.Elevator
-import com.xdd.elevatorservicedemo.model.ElevatorService
+import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 import com.xdd.elevatorservicedemo.ui.BindingController
 import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
 
@@ -103,7 +103,7 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
     private val elevatorRoomController = ElevatorRoomController(binding.elevatorRoomBinding)
     // key: floor index
     private lateinit var floorBottomGuidelines: List<Guideline>
-    private lateinit var serviceConfig: ElevatorService.Config
+    private lateinit var serviceConfig: ElevatorServiceConfig
 
     init {
         binding.addOnPropertyChanged { localBinding, propertyId ->
@@ -125,7 +125,7 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
         }
     }
 
-    fun setConfig(config: ElevatorService.Config) {
+    fun setConfig(config: ElevatorServiceConfig) {
         serviceConfig = config
     }
 

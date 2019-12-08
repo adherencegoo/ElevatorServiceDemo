@@ -6,7 +6,7 @@ import androidx.databinding.ObservableBoolean
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import com.xdd.elevatorservicedemo.R
-import com.xdd.elevatorservicedemo.model.ElevatorService
+import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 import com.xdd.elevatorservicedemo.utils.UserInt
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorFragment
 
@@ -24,7 +24,7 @@ class MainViewModel : ViewModel() {
             Toast.makeText(activity, "Floor count should be a positive integer", Toast.LENGTH_LONG)
                 .show()
         } else {
-            val config = ElevatorService.Config(
+            val config = ElevatorServiceConfig(
                 baseFloor.intValue,
                 floorCount.intValue,
                 elevatorCount.intValue,

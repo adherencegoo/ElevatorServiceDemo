@@ -7,8 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.xdd.elevatorservicedemo.R
 import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
-import com.xdd.elevatorservicedemo.model.ElevatorService
-import com.xdd.elevatorservicedemo.model.PassengerGenerator
+import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -17,7 +16,7 @@ class ElevatorFragment : Fragment() {
     companion object {
         private const val KEY_ELEVATOR_CONFIG = "KEY_ELEVATOR_CONFIG"
 
-        fun newInstance(config: ElevatorService.Config) = ElevatorFragment().apply {
+        fun newInstance(config: ElevatorServiceConfig) = ElevatorFragment().apply {
             arguments = Bundle().apply {
                 putSerializable(KEY_ELEVATOR_CONFIG, config)
             }
@@ -43,7 +42,7 @@ class ElevatorFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         val app = activity?.application ?: return
 
-        val config = arguments?.getSerializable(KEY_ELEVATOR_CONFIG) as ElevatorService.Config
+        val config = arguments?.getSerializable(KEY_ELEVATOR_CONFIG) as ElevatorServiceConfig
         val factory = ElevatorViewModel.Factory(app, config)
         viewModel = ViewModelProviders.of(this, factory).get(ElevatorViewModel::class.java)
         fragmentController.binding.viewModel = viewModel

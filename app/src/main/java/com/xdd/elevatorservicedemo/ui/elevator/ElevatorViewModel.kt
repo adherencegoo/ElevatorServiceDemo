@@ -6,13 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.xdd.elevatorservicedemo.MyApp
 import com.xdd.elevatorservicedemo.model.ElevatorService
+import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 
-class ElevatorViewModel(application: Application, config: ElevatorService.Config) :
+class ElevatorViewModel(application: Application, config: ElevatorServiceConfig) :
     AndroidViewModel(application) {
 
     class Factory(
         private val application: Application,
-        private val config: ElevatorService.Config
+        private val config: ElevatorServiceConfig
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel?> create(modelClass: Class<T>): T =
