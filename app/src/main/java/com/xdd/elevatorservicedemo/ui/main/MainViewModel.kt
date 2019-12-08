@@ -1,14 +1,9 @@
 package com.xdd.elevatorservicedemo.ui.main
 
-import android.view.View
-import android.widget.Toast
 import androidx.databinding.ObservableBoolean
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
-import com.xdd.elevatorservicedemo.R
 import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 import com.xdd.elevatorservicedemo.utils.UserInt
-import com.xdd.elevatorservicedemo.ui.elevator.ElevatorFragment
 
 class MainViewModel : ViewModel() {
     val baseFloor = UserInt()
@@ -17,24 +12,11 @@ class MainViewModel : ViewModel() {
     val animationDurationPerFloor = UserInt(1000)
     val doorAnimationEnabled = ObservableBoolean(true)
 
-    fun createService(view: View) {
-        val activity = view.context as FragmentActivity
-
-        if (floorCount.intValue < 2) {
-            Toast.makeText(activity, "Invalid floor count, must >= 2", Toast.LENGTH_LONG)
-                .show()
-        } else {
-            val config = ElevatorServiceConfig(
-                baseFloor.intValue,
-                floorCount.intValue,
-                elevatorCount.intValue,
-                animationDurationPerFloor.intValue.toLong(),
-                doorAnimationEnabled.get()
-            )
-            activity.supportFragmentManager.beginTransaction()
-                .replace(R.id.container, ElevatorFragment.newInstance(config))
-                .addToBackStack(null)
-                .commit()
-        }
-    }
+    fun createConfig() = ElevatorServiceConfig(
+        baseFloor.intValue,
+        floorCount.intValue,
+        elevatorCount.intValue,
+        animationDurationPerFloor.intValue.toLong(),
+        doorAnimationEnabled.get()
+    )
 }

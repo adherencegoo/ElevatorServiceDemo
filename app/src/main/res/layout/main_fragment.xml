@@ -131,18 +131,6 @@
             app:layout_constraintTop_toBottomOf="@+id/editAnimationDurationPerFloor"
             tools:ignore="HardcodedText" />
 
-        <Button
-            android:id="@+id/btnCreate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:onClick="@{viewModel::createService}"
-            android:text="create"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/switchEnableDoorAnimation"
-            tools:ignore="HardcodedText" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>
