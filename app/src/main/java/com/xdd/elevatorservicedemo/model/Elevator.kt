@@ -6,10 +6,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.utils.nonNullMinBy
+import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.math.abs
 
-class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) {
+class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
     companion object {
         private const val DELAY_FOR_PASSENGER_ANIMATION = 1000L
     }
@@ -39,6 +40,7 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         private val candidateFloors: Iterable<Int>
     ) {
         internal fun findMovement(): Movement? {
+            val service = weakService.get() ?: return null
             // from candidate floors, find the first floor
             // that has (internal requests) or (external requests with the same movement)
             val targetFloor = candidateFloors.map {
@@ -52,6 +54,8 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
             }
         }
     }
+
+    private val weakService = WeakReference(service)
 
     private val uiHandler = Handler(Looper.getMainLooper())
 
@@ -82,7 +86,9 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
         }
 
     fun setRealFloorId(floorId: Int) {
-        realFloor = service.getFloor(floorId)
+        weakService.get()?.let {
+            realFloor = it.getFloor(floorId)
+        }
     }
 
     private val _liveDirection = MutableLiveData(Direction.NONE)
@@ -154,6 +160,8 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
     }
 
     private fun arriveFloor(movement: Movement) {
+        val service = weakService.get() ?: return
+
         if (movement.futureDirection != Direction.NONE) {
             realDirection = movement.futureDirection
         }
@@ -208,6 +216,8 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
      * getNextDestFloor
      * */
     private fun getNextMovement(): Movement? {
+        val service = weakService.get() ?: return null
+
         val currentFloorId = realFloor.id
         val currentMovement = realDirection
         val top = service.config.topFloor
@@ -238,6 +248,8 @@ class Elevator(id: Int, private val service: ElevatorService) : Room<Floor>(id) 
      * doesn't take Movement into account
      * */
     private fun getPrioritizedMovementWithNoneDirection(): Movement? {
+        val service = weakService.get() ?: return null
+
         val currentFloor = realFloor
         val top = service.config.topFloor
         val base = service.config.baseFloor
