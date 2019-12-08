@@ -32,5 +32,9 @@ class ElevatorService(val config: Config) {
         elevator
     }
 
+    private val passengerGenerator = PassengerGenerator()
+
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
+
+    suspend fun generatePassenger() = passengerGenerator.generate(this)
 }

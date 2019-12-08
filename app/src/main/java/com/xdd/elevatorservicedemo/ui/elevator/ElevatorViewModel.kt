@@ -1,18 +1,25 @@
 package com.xdd.elevatorservicedemo.ui.elevator
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.xdd.elevatorservicedemo.MyApp
 import com.xdd.elevatorservicedemo.model.ElevatorService
-import com.xdd.elevatorservicedemo.model.Passenger
-import java.util.*
-import kotlin.concurrent.scheduleAtFixedRate
 
-class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
-    class Factory(private val config: ElevatorService.Config) : ViewModelProvider.Factory {
+class ElevatorViewModel(application: Application, config: ElevatorService.Config) :
+    AndroidViewModel(application) {
+
+    class Factory(
+        private val application: Application,
+        private val config: ElevatorService.Config
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel?> create(modelClass: Class<T>): T =
-            ElevatorViewModel(config) as T
+            ElevatorViewModel(application, config) as T
     }
+
+    val coroutineAsset = getApplication<MyApp>().appCoroutine.newChild()
 
     val elevatorService = ElevatorService(config)
 
@@ -29,37 +36,8 @@ class ElevatorViewModel(config: ElevatorService.Config) : ViewModel() {
 //    }
 
 
-    private val random = Random()
-    private var coordinateGenerator: TimerTask? = null
-
-    fun startRandomPassenger(start: Boolean) {
-        // xdd: temporarily disable random timer
-        if (true) return
-
-        coordinateGenerator = if (start) {
-            Timer().scheduleAtFixedRate(0, 5000) { newPassenger() }
-        } else {
-            coordinateGenerator?.cancel()
-            null
-        }
-    }
-
-    fun newPassenger(): Passenger {
-        val floorCount = elevatorService.config.floorCount
-        val baseFloor = elevatorService.config.baseFloor
-
-        var fromFloor: Int
-        var toFloor: Int
-        do {
-            fromFloor = random.nextInt(floorCount) + baseFloor
-            toFloor = random.nextInt(floorCount) + baseFloor
-        } while (fromFloor == toFloor)
-
-        return Passenger(elevatorService.getFloor(fromFloor), elevatorService.getFloor(toFloor))
-    }
-
     override fun onCleared() {
         super.onCleared()
-        coordinateGenerator?.cancel()
+        coroutineAsset.cancel()
     }
 }

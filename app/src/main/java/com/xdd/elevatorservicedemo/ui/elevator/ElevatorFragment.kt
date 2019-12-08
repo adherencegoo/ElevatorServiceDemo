@@ -8,6 +8,9 @@ import androidx.lifecycle.ViewModelProviders
 import com.xdd.elevatorservicedemo.R
 import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
 import com.xdd.elevatorservicedemo.model.ElevatorService
+import com.xdd.elevatorservicedemo.model.PassengerGenerator
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ElevatorFragment : Fragment() {
 
@@ -38,9 +41,10 @@ class ElevatorFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        val app = activity?.application ?: return
 
         val config = arguments?.getSerializable(KEY_ELEVATOR_CONFIG) as ElevatorService.Config
-        val factory = ElevatorViewModel.Factory(config)
+        val factory = ElevatorViewModel.Factory(app, config)
         viewModel = ViewModelProviders.of(this, factory).get(ElevatorViewModel::class.java)
         fragmentController.binding.viewModel = viewModel
     }
@@ -48,16 +52,6 @@ class ElevatorFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        viewModel.startRandomPassenger(true)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        viewModel.startRandomPassenger(false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -68,12 +62,20 @@ class ElevatorFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_item_new_passenger -> {
-                val passenger = viewModel.newPassenger()
-                Toast.makeText(
-                    context,
-                    passenger.getContentString(),
-                    Toast.LENGTH_LONG
-                ).show()
+                val coroutineAsset = viewModel.coroutineAsset
+
+                coroutineAsset.backgroundScope.launch {
+                    val passenger = viewModel.elevatorService.generatePassenger()
+
+                    withContext(coroutineAsset.uiScope.coroutineContext) {
+                        Toast.makeText(
+                            context,
+                            passenger.getContentString(),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
                 true
             }
             else -> false
