@@ -1,5 +1,6 @@
 package com.xdd.elevatorservicedemo.model
 
+import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.*
 import kotlin.coroutines.resume
@@ -7,9 +8,9 @@ import kotlin.coroutines.resume
 class PassengerGenerator {
     private val random = Random()
 
-    suspend fun generate(service: ElevatorService): Passenger {
-        val floorCount = service.config.floorCount
-        val baseFloor = service.config.baseFloor
+    suspend fun generate(viewModel: ElevatorViewModel): Passenger {
+        val floorCount = viewModel.config.floorCount
+        val baseFloor = viewModel.config.baseFloor
 
         var fromFloor: Int
         var toFloor: Int
@@ -21,7 +22,7 @@ class PassengerGenerator {
             } while (fromFloor == toFloor)
 
             val passenger =
-                Passenger(service.getFloor(fromFloor), service.getFloor(toFloor))
+                Passenger(viewModel.getFloor(fromFloor), viewModel.getFloor(toFloor))
             it.resume(passenger)
         }
     }

@@ -5,10 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.xdd.elevatorservicedemo.MyApp
-import com.xdd.elevatorservicedemo.model.ElevatorService
-import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
+import com.xdd.elevatorservicedemo.model.*
 
-class ElevatorViewModel(application: Application, config: ElevatorServiceConfig) :
+class ElevatorViewModel(application: Application, val config: ElevatorServiceConfig) :
     AndroidViewModel(application) {
 
     class Factory(
@@ -22,23 +21,29 @@ class ElevatorViewModel(application: Application, config: ElevatorServiceConfig)
 
     val coroutineAsset = getApplication<MyApp>().appCoroutine.newChild()
 
-    val elevatorService = ElevatorService(config, coroutineAsset)
-
-//    init { // xdd
-//        elevatorService.elevators.forEach {  elevator ->
-//            elevator.liveFloor.observeForever {
-//                Lg.v("elevator(${elevator.id}): floor:${it}")
-//            }
-//
-//            elevator.liveMovement.observeForever {
-//                Lg.d("elevator(${elevator.id}): movement:${it}")
-//            }
-//        }
-//    }
-
-
     override fun onCleared() {
         super.onCleared()
         coroutineAsset.cancel()
     }
+
+    val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
+
+    val elevators = List(config.elevatorCount) { index ->
+        val elevator = Elevator(index, this)
+
+        // An elevator must observe the event: passenger arrival to all floors
+        floors.forEach { floor ->
+            floor.livePassengerArrived.observeForever {
+                elevator.triggerMove()
+            }
+        }
+
+        elevator
+    }
+
+    private val passengerGenerator = PassengerGenerator()
+
+    fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
+
+    suspend fun generatePassenger() = passengerGenerator.generate(this)
 }

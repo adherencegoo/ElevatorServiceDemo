@@ -64,7 +64,7 @@ class ElevatorFragment : Fragment() {
                 val coroutineAsset = viewModel.coroutineAsset
 
                 coroutineAsset.backgroundScope.launch {
-                    val passenger = viewModel.elevatorService.generatePassenger()
+                    val passenger = viewModel.generatePassenger()
 
                     withContext(coroutineAsset.uiScope.coroutineContext) {
                         Toast.makeText(

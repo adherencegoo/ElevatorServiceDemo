@@ -42,7 +42,7 @@
             <include
                 android:id="@+id/elevatorShaftBinding"
                 layout="@layout/elevator_shaft"
-                bind:elevator="@{viewModel.elevatorService.elevators.get(0)}" />
+                bind:elevator="@{viewModel.elevators.get(0)}" />
         </androidx.core.widget.NestedScrollView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

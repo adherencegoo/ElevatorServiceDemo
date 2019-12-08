@@ -3,14 +3,14 @@ package com.xdd.elevatorservicedemo.model
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
+import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
 import com.xdd.elevatorservicedemo.utils.nonNullMinBy
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.math.abs
 
-class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
+class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(id) {
     companion object {
         private const val DELAY_FOR_PASSENGER_ANIMATION = 1000L
     }
@@ -40,11 +40,10 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
         private val candidateFloors: Iterable<Int>
     ) {
         internal fun findMovement(): Movement? {
-            val service = weakService.get() ?: return null
             // from candidate floors, find the first floor
             // that has (internal requests) or (external requests with the same movement)
             val targetFloor = candidateFloors.map {
-                service.getFloor(it)
+                viewModel.getFloor(it)
             }.firstOrNull { floor ->
                 hasPassengers(floor) || floor.hasPassengers(wantedDirection)
             }
@@ -55,8 +54,6 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
         }
     }
 
-    private val weakService = WeakReference(service)
-
     private val _liveDoorState = MutableLiveData(DoorState.CLOSED)
     val liveDoorState: LiveData<DoorState> = _liveDoorState
     private var realDoorState = DoorState.CLOSED
@@ -65,9 +62,9 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
             _liveDoorState.postValue(value)
         }
 
-    private val _liveFloor = MutableLiveData(service.floors.first())
+    private val _liveFloor = MutableLiveData(viewModel.floors.first())
     val liveFloor: LiveData<Floor> = _liveFloor
-    private var realFloor = service.floors.first()
+    private var realFloor = viewModel.floors.first()
         private set(value) {
             if (field != value) {
                 Lg.become("realFloor", field, value).printLog(Lg.Type.I)
@@ -84,9 +81,7 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
         }
 
     fun setRealFloorId(floorId: Int) {
-        weakService.get()?.let {
-            realFloor = it.getFloor(floorId)
-        }
+        realFloor = viewModel.getFloor(floorId)
     }
 
     private val _liveDirection = MutableLiveData(Direction.NONE)
@@ -135,9 +130,7 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
     }
 
     private fun consumeOnArriveAction() {
-        val service = weakService.get() ?: return
-
-        service.coroutineAsset.backgroundScope.launch {
+        viewModel.coroutineAsset.backgroundScope.launch {
             while (true) {
                 val delayTime = synchronized(this) { pendingOnArriveActions.poll() }?.invoke() ?: break
                 delay(delayTime)
@@ -156,8 +149,6 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
     }
 
     private fun arriveFloor(movement: Movement) {
-        val service = weakService.get() ?: return
-
         if (movement.futureDirection != Direction.NONE) {
             realDirection = movement.futureDirection
         }
@@ -165,7 +156,7 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
         val currentFloor = realFloor
         val currentDirection = realDirection
 
-        if (service.config.doorAnimationEnabled) {
+        if (viewModel.config.doorAnimationEnabled) {
             supplyOnArriveAction({
                 realDoorState = DoorState.OPENING
                 realDoorState.animationDuration
@@ -193,7 +184,7 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
             if (fromFloorToElevator.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
         })
 
-        if (service.config.doorAnimationEnabled) {
+        if (viewModel.config.doorAnimationEnabled) {
             supplyOnArriveAction({
                 realDoorState = DoorState.CLOSING
                 realDoorState.animationDuration
@@ -212,12 +203,10 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
      * getNextDestFloor
      * */
     private fun getNextMovement(): Movement? {
-        val service = weakService.get() ?: return null
-
         val currentFloorId = realFloor.id
         val currentMovement = realDirection
-        val top = service.config.topFloor
-        val base = service.config.baseFloor
+        val top = viewModel.config.topFloor
+        val base = viewModel.config.baseFloor
 
         val movement = when (currentMovement) {
             Direction.NONE -> getPrioritizedMovementWithNoneDirection()
@@ -244,11 +233,9 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
      * doesn't take Movement into account
      * */
     private fun getPrioritizedMovementWithNoneDirection(): Movement? {
-        val service = weakService.get() ?: return null
-
         val currentFloor = realFloor
-        val top = service.config.topFloor
-        val base = service.config.baseFloor
+        val top = viewModel.config.topFloor
+        val base = viewModel.config.baseFloor
 
         // serve current floor
         currentFloor.takeIf { it.hasAnyPassengers() }?.let {

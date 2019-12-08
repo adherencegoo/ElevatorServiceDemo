@@ -25,7 +25,7 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
             if (propertyId == BR.viewModel) {
                 val localViewModel = localBinding.viewModel!!
 
-                elevatorShaftController.setConfig(localViewModel.elevatorService.config)
+                elevatorShaftController.setConfig(localViewModel.config)
 
                 localBinding.floorsView.apply {
                     // when floorsView is fully loaded, update height of elevatorShaft
@@ -38,7 +38,7 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
                         }
                     }
 
-                    adapter = FloorAdapter(localViewModel.elevatorService.floors)
+                    adapter = FloorAdapter(localViewModel.floors)
 
                     val layoutOrientation = RecyclerView.VERTICAL
                     layoutManager = LinearLayoutManager(context, layoutOrientation, true)
