@@ -21,7 +21,7 @@ class ElevatorViewModel(application: Application, config: ElevatorService.Config
 
     val coroutineAsset = getApplication<MyApp>().appCoroutine.newChild()
 
-    val elevatorService = ElevatorService(config)
+    val elevatorService = ElevatorService(config, coroutineAsset)
 
 //    init { // xdd
 //        elevatorService.elevators.forEach {  elevator ->

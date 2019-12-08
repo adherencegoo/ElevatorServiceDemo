@@ -1,8 +1,9 @@
 package com.xdd.elevatorservicedemo.model
 
+import com.xdd.elevatorservicedemo.utils.CoroutineAsset
 import java.io.Serializable
 
-class ElevatorService(val config: Config) {
+class ElevatorService(val config: Config, val coroutineAsset: CoroutineAsset) {
     data class Config(
         val baseFloor: Int,
         val floorCount: Int,

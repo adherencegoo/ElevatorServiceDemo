@@ -1,11 +1,11 @@
 package com.xdd.elevatorservicedemo.model
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.utils.nonNullMinBy
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.math.abs
@@ -56,8 +56,6 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
     }
 
     private val weakService = WeakReference(service)
-
-    private val uiHandler = Handler(Looper.getMainLooper())
 
     private val _liveDoorState = MutableLiveData(DoorState.CLOSED)
     val liveDoorState: LiveData<DoorState> = _liveDoorState
@@ -137,14 +135,12 @@ class Elevator(id: Int, service: ElevatorService) : Room<Floor>(id) {
     }
 
     private fun consumeOnArriveAction() {
-        // remove all events
-        uiHandler.removeCallbacksAndMessages(null)
-        while (true) {
-            val delay = synchronized(this) { pendingOnArriveActions.poll() }?.invoke() ?: break
-            if (delay > 0) {
-                //xdd: how to prevent postDelayed, and listen to end of PassengerAdapter animation
-                uiHandler.postDelayed(this::consumeOnArriveAction, delay)
-                break
+        val service = weakService.get() ?: return
+
+        service.coroutineAsset.backgroundScope.launch {
+            while (true) {
+                val delayTime = synchronized(this) { pendingOnArriveActions.poll() }?.invoke() ?: break
+                delay(delayTime)
             }
         }
     }
