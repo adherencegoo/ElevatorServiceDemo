@@ -4,8 +4,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
+import com.xdd.elevatorservicedemo.utils.createSingleThreadScope
 import com.xdd.elevatorservicedemo.utils.nonNullMinBy
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.abs
@@ -54,6 +55,20 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         }
     }
 
+    private val actionConsumerScope = viewModel.coroutineJob.createSingleThreadScope()
+
+    private abstract class NamedAction(private val name: String) : () -> Long {
+        override fun toString(): String {
+            return "$name-NamedAction@${Integer.toHexString(hashCode())}"
+        }
+    }
+
+    private val _liveOnArriveFloor = MutableLiveData(Unit).apply {
+        observeForever {
+            realMovement?.let(this@Elevator::arriveFloor)
+        }
+    }
+
     private val _liveDoorState = MutableLiveData(DoorState.CLOSED)
     val liveDoorState: LiveData<DoorState> = _liveDoorState
     private var realDoorState = DoorState.CLOSED
@@ -72,10 +87,8 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
                 _liveFloor.postValue(value)
 
                 // When floor changed, if currentFloor == targetFloor, then arrive
-                realMovement?.let {
-                    if (field == it.toFloor) {
-                        arriveFloor(it)
-                    }
+                if (field == realMovement?.toFloor) {
+                    _liveOnArriveFloor.postValue(Unit)
                 }
             }
         }
@@ -109,7 +122,12 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
                 _liveMovement.postValue(value)
 
                 if (alreadyAtDestFloor) {
-                    arriveFloor(value!!)
+                    /* The setter of realMovement is encapsulated in a coroutine Job
+                     * And, `arriveFloor` will start a new coroutine Job
+                     *
+                     * Use `postValue` to prevent nested Job
+                    */
+                    _liveOnArriveFloor.postValue(Unit)
                 }
             }
         }
@@ -117,35 +135,78 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     override fun getPassengerKey(passenger: Passenger): Floor = passenger.toFloor
 
     /**
+     * Synced by `this`
+     *
      * Long: delayed time for animation of this action
      * */
-    private val pendingOnArriveActions = ArrayDeque<() -> Long>()
+    private val pendingActions = LinkedList<() -> Long>()
 
-    private fun supplyOnArriveAction(action: () -> Long, allowDuplicate: Boolean = true) {
+    /**
+     * @return the `action` is enqueued
+     * */
+    private fun supplyAction(action: () -> Long) =
         synchronized(this) {
-            if (allowDuplicate || !pendingOnArriveActions.contains(action)) {
-                pendingOnArriveActions.offer(action)
+            if (!pendingActions.contains(action)) {
+                pendingActions.offer(action)
+                true
+            } else {
+                false
+            }
+        }
+
+    private fun consumeAction() {
+        actionConsumerScope.launch {
+            while (isActive) {
+                val action = synchronized(this) { pendingActions.poll() } ?: break
+                val delayTime = action.invoke()
+
+                // Use sleep to block the latter actions
+                @Suppress("BlockingMethodInNonBlockingContext")
+                Thread.sleep(delayTime)
             }
         }
     }
 
-    private fun consumeOnArriveAction() {
-        viewModel.backgroundScope.launch {
-            while (true) {
-                val delayTime = synchronized(this) { pendingOnArriveActions.poll() }?.invoke() ?: break
-                delay(delayTime)
-            }
+    private val actionMove = object : NamedAction("Move") {
+        override fun invoke(): Long {
+            realMovement = getNextMovement()
+            return 0L
         }
     }
 
-    private val actionMove = {
-        realMovement = getNextMovement()
-        0L
+    private val actionMapDoorState = DoorState.values().map {
+        it to object : NamedAction(it.toString()) {
+            override fun invoke(): Long {
+                realDoorState = it
+                return realDoorState.animationDuration
+            }
+        }
+    }.toMap()
+
+    private val actionLeaveElevator = object : NamedAction("LeaveElevator") {
+        override fun invoke(): Long {
+            val passengers =
+                removePassengers(realFloor).also { Lg.d("leave elevator($this):$it") }
+            return if (passengers.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
+        }
+    }
+
+    private val actionEnterElevator = object : NamedAction("EnterElevator") {
+        override fun invoke(): Long {
+            // leave floor
+            val fromFloorToElevator = realFloor.removePassengers(realDirection)
+                .also { Lg.d("($realDirection) leave $realFloor, enter $this: $it") }
+            // enter elevator
+            addPassengers(fromFloorToElevator)
+
+            return if (fromFloorToElevator.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
+        }
     }
 
     fun triggerMove() {
-        supplyOnArriveAction(actionMove, false)
-        consumeOnArriveAction()
+        if (supplyAction(actionMove)) {
+            consumeAction()
+        }
     }
 
     private fun arriveFloor(movement: Movement) {
@@ -153,48 +214,23 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
             realDirection = movement.futureDirection
         }
 
-        val currentFloor = realFloor
-        val currentDirection = realDirection
-
-        if (viewModel.config.doorAnimationEnabled) {
-            supplyOnArriveAction({
-                realDoorState = DoorState.OPENING
-                realDoorState.animationDuration
-            })
+        // Clear pending actions
+        synchronized(this) {
+            pendingActions.clear()
         }
 
-        supplyOnArriveAction({
-            realDoorState = DoorState.OPEN
-            realDoorState.animationDuration
-        })
+        if (viewModel.config.doorAnimationEnabled) {
+            supplyAction(actionMapDoorState.getValue(DoorState.OPENING))
+        }
+        supplyAction(actionMapDoorState.getValue(DoorState.OPEN))
 
-        // leave elevator
-        supplyOnArriveAction({
-            val passengers = removePassengers(currentFloor).also { Lg.d("leave elevator($this):$it") }
-            if (passengers.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
-        })
-
-        supplyOnArriveAction({
-            // leave floor
-            val fromFloorToElevator = currentFloor.removePassengers(currentDirection)
-                .also { Lg.d("($currentDirection) leave $currentFloor, enter $this: $it") }
-            // enter elevator
-            addPassengers(fromFloorToElevator)
-
-            if (fromFloorToElevator.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
-        })
+        supplyAction(actionLeaveElevator)
+        supplyAction(actionEnterElevator)
 
         if (viewModel.config.doorAnimationEnabled) {
-            supplyOnArriveAction({
-                realDoorState = DoorState.CLOSING
-                realDoorState.animationDuration
-            })
+            supplyAction(actionMapDoorState.getValue(DoorState.CLOSING))
         }
-
-        supplyOnArriveAction({
-            realDoorState = DoorState.CLOSED
-            realDoorState.animationDuration
-        })
+        supplyAction(actionMapDoorState.getValue(DoorState.CLOSED))
 
         triggerMove()
     }

@@ -22,7 +22,7 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
             ElevatorViewModel(application, config) as T
     }
 
-    private val coroutineJob = getApplication<MyApp>().appCoroutineJob.createChildJob()
+    val coroutineJob = getApplication<MyApp>().appCoroutineJob.createChildJob()
     val uiScope = coroutineJob.createScope(Dispatchers.Main)
     val backgroundScope = coroutineJob.createScope(Dispatchers.IO)
 
