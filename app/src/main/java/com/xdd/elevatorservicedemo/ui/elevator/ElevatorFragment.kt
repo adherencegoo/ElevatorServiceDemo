@@ -61,12 +61,10 @@ class ElevatorFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_item_new_passenger -> {
-                val coroutineAsset = viewModel.coroutineAsset
-
-                coroutineAsset.backgroundScope.launch {
+                viewModel.backgroundScope.launch {
                     val passenger = viewModel.generatePassenger()
 
-                    withContext(coroutineAsset.uiScope.coroutineContext) {
+                    withContext(viewModel.uiScope.coroutineContext) {
                         Toast.makeText(
                             context,
                             passenger.getContentString(),

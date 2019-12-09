@@ -130,7 +130,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     }
 
     private fun consumeOnArriveAction() {
-        viewModel.coroutineAsset.backgroundScope.launch {
+        viewModel.backgroundScope.launch {
             while (true) {
                 val delayTime = synchronized(this) { pendingOnArriveActions.poll() }?.invoke() ?: break
                 delay(delayTime)

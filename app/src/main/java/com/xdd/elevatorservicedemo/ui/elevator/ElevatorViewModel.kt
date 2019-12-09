@@ -6,6 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.xdd.elevatorservicedemo.MyApp
 import com.xdd.elevatorservicedemo.model.*
+import com.xdd.elevatorservicedemo.utils.createChildJob
+import com.xdd.elevatorservicedemo.utils.createScope
+import kotlinx.coroutines.Dispatchers
 
 class ElevatorViewModel(application: Application, val config: ElevatorServiceConfig) :
     AndroidViewModel(application) {
@@ -19,11 +22,13 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
             ElevatorViewModel(application, config) as T
     }
 
-    val coroutineAsset = getApplication<MyApp>().appCoroutine.newChild()
+    private val coroutineJob = getApplication<MyApp>().appCoroutineJob.createChildJob()
+    val uiScope = coroutineJob.createScope(Dispatchers.Main)
+    val backgroundScope = coroutineJob.createScope(Dispatchers.IO)
 
     override fun onCleared() {
         super.onCleared()
-        coroutineAsset.cancel()
+        coroutineJob.cancel()
     }
 
     val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }

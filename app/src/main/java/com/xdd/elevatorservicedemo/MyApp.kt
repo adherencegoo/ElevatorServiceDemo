@@ -1,13 +1,13 @@
 package com.xdd.elevatorservicedemo
 
 import android.app.Application
-import com.xdd.elevatorservicedemo.utils.CoroutineAsset
+import kotlinx.coroutines.Job
 
 class MyApp : Application() {
-    val appCoroutine = CoroutineAsset()
+    val appCoroutineJob = Job()
 
     override fun onTerminate() {
         super.onTerminate()
-        appCoroutine.cancel()
+        appCoroutineJob.cancel()
     }
 }
