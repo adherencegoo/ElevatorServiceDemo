@@ -13,14 +13,11 @@ abstract class Room<K>(val id: Int) {
 
     private val livePassengerMap = MutableLiveData<HashMap<K, MutableList<Passenger>>>()
 
-    val livePassengerList = Transformations.switchMap(livePassengerMap) { passengerMap ->
-
-        val passengerList: List<Passenger> =
-            passengerMap?.values?.fold(mutableListOf()) { all, part ->
-                all += part
-                all
-            } ?: emptyList()
-        MutableLiveData(passengerList)
+    val livePassengerList = Transformations.map(livePassengerMap) { passengerMap ->
+        passengerMap?.values?.fold(mutableListOf()) { all, part ->
+            all += part
+            all
+        } ?: emptyList<Passenger>()
     }
 
     private fun notifyPassengerMapUpdated() = livePassengerMap.postValue(passengers)
