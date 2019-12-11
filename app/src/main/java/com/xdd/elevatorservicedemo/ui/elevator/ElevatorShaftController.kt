@@ -6,6 +6,7 @@ import android.transition.ChangeBounds
 import android.transition.Transition
 import android.transition.TransitionManager
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -129,16 +130,35 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
         serviceConfig = config
     }
 
-    fun setTotalHeight(totalHeight: Int, onUpdateFinished: (() -> Unit)?) {
+    fun setTotalHeight(shaftHeight: Int, shaftTopMargin: Int, onUpdateFinished: (() -> Unit)?) {
         binding.elevatorShaftBg.apply {
             // when height of elevatorShaft is updated, setup guidelines in elevatorShaft
             addDisposableOnGlobalLayoutListener {
-                initElevatorShaftGuidelines()
-                onUpdateFinished?.invoke()
+                binding.root.apply {
+                    addDisposableOnGlobalLayoutListener {
+                        initElevatorShaftGuidelines()
+                        onUpdateFinished?.invoke()
+                    }
+
+                    /*
+                     * *** Workaround ***
+                     * ElevatorShaft (ConstraintLayout) itself is encapsulated in a scrollableElevatorShaft (NestedScrollView)
+                     *
+                     * if scrollableElevatorShaft's height is
+                     *  (1) wrap_content: when ElevatorShaft is very tall, scrollableElevatorShaft will overlap views above it (top constraint is ignored)
+                     *  (2) match_constraint: when ElevatorShaft is very short, scrollableElevatorShaft can occupy correct space, but its content (ElevatorShaft) will align top
+                     *
+                     * Workaround:
+                     *  Adopt (2), and add topMargin to push ElevatorShaft to the bottom
+                     * */
+                    val params = layoutParams as ViewGroup.MarginLayoutParams
+                    params.topMargin = shaftTopMargin
+                    layoutParams = params
+                }
             }
 
             val params = layoutParams
-            params.height = totalHeight
+            params.height = shaftHeight
             layoutParams = params
         }
     }

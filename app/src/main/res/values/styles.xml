@@ -10,7 +10,7 @@
     </style>
 
     <style name="MyTextViewStyle" parent="android:Widget.TextView">
-        <item name="android:textSize">10sp</item>
+        <item name="android:textSize">@dimen/text_size_common</item>
     </style>
 
     <style name="ShadowTextViewStyle" parent="android:Widget.TextView">

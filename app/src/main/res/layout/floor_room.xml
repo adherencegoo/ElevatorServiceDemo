@@ -6,6 +6,10 @@
     <data>
 
         <variable
+            name="generator"
+            type="com.xdd.elevatorservicedemo.model.PassengerGenerator" />
+
+        <variable
             name="floor"
             type="com.xdd.elevatorservicedemo.model.Floor" />
     </data>
@@ -33,5 +37,20 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textFloorName" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:gravity="center"
+            android:onClick="@{(view) -> generator.pickFloor(floor)}"
+            android:textSize="20sp"
+            app:bindPickedFloorPair="@{generator.livePickedPair}"
+            app:bindSelfFloor="@{floor}"
+            app:layout_constraintBottom_toBottomOf="@+id/passengerRecycler"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/textFloorName"
+            tools:text="PickedFloorType" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

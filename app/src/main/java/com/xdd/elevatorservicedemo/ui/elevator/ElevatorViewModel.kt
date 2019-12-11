@@ -46,7 +46,7 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
         elevator
     }
 
-    private val passengerGenerator = PassengerGenerator()
+    val passengerGenerator = PassengerGenerator()
 
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
 

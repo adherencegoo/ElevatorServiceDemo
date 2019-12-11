@@ -9,6 +9,7 @@ import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
 import com.xdd.elevatorservicedemo.ui.BindingController
 import com.xdd.elevatorservicedemo.utils.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
+import kotlin.math.max
 
 class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
     BindingController<ElevatorFragmentBinding, ConstraintLayout>(fragmentBinding) {
@@ -32,13 +33,16 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
                     addDisposableOnGlobalLayoutListener {
                         // let floorsView and elevatorShaft have the same height
                         val buildingHeight = computeVerticalScrollRange()
-                        elevatorShaftController.setTotalHeight(buildingHeight) {
+                        elevatorShaftController.setTotalHeight(
+                            buildingHeight,
+                            max(scrollableShaft.height - buildingHeight, 0)
+                        ) {
                             // When height of the shaft is updated, scroll to the bottom
                             scrollableShaft.scrollTo(0, buildingHeight - scrollableShaft.height)
                         }
                     }
 
-                    adapter = FloorAdapter(localViewModel.floors)
+                    adapter = FloorAdapter(localViewModel)
 
                     val layoutOrientation = RecyclerView.VERTICAL
                     layoutManager = LinearLayoutManager(context, layoutOrientation, true)

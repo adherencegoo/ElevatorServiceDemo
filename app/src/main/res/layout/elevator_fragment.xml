@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:bind="http://schemas.android.com/apk/res-auto">
+    xmlns:bind="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
 
@@ -13,6 +14,56 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/textStartFloor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:onClick="@{(view) -> viewModel.passengerGenerator.setPickingType(false)}"
+            android:textSize="@dimen/text_size_control_panel"
+            app:bindCurrentPickingType="@{viewModel.passengerGenerator.observablePickingType}"
+            app:bindInterestingPickingType="@{false}"
+            app:bindPickedFloor="@{viewModel.passengerGenerator.livePickedStartFloor}"
+            app:layout_constraintBottom_toBottomOf="@+id/btnExchangeStartEndFloor"
+            app:layout_constraintEnd_toStartOf="@+id/btnExchangeStartEndFloor"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/btnExchangeStartEndFloor"
+            tools:text="StartFloor" />
+
+        <Button
+            android:id="@+id/btnExchangeStartEndFloor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="@{(view) -> viewModel.passengerGenerator.exchangeStartEndFloor()}"
+            android:text="←→"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/textEndFloor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:onClick="@{(view) -> viewModel.passengerGenerator.setPickingType(true)}"
+            android:textSize="@dimen/text_size_control_panel"
+            app:bindCurrentPickingType="@{viewModel.passengerGenerator.observablePickingType}"
+            app:bindInterestingPickingType="@{true}"
+            app:bindPickedFloor="@{viewModel.passengerGenerator.livePickedEndFloor}"
+            app:layout_constraintBottom_toBottomOf="@+id/btnExchangeStartEndFloor"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btnExchangeStartEndFloor"
+            app:layout_constraintTop_toTopOf="@+id/btnExchangeStartEndFloor"
+            tools:text="EndFloor" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/controlBottomBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="textStartFloor,btnExchangeStartEndFloor,textEndFloor" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/floorElevatorSeparator"
@@ -28,21 +79,24 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/floorElevatorSeparator"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@+id/controlBottomBarrier" />
 
         <androidx.core.widget.NestedScrollView
             android:id="@+id/scrollableElevatorShaft"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:overScrollMode="never"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/floorElevatorSeparator">
+            app:layout_constraintStart_toEndOf="@+id/floorElevatorSeparator"
+            app:layout_constraintTop_toBottomOf="@+id/controlBottomBarrier"
+            app:layout_constraintVertical_bias="1">
 
             <include
                 android:id="@+id/elevatorShaftBinding"
                 layout="@layout/elevator_shaft"
                 bind:elevator="@{viewModel.elevators.get(0)}" />
         </androidx.core.widget.NestedScrollView>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

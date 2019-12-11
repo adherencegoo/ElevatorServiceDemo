@@ -8,9 +8,11 @@ import com.xdd.elevatorservicedemo.model.Floor
 import com.xdd.elevatorservicedemo.ui.RecyclerBindingAdapter
 import java.lang.UnsupportedOperationException
 
-class FloorAdapter(floors: List<Floor>) : RecyclerBindingAdapter<Floor, FloorRoomBinding>() {
+class FloorAdapter(viewModel: ElevatorViewModel) : RecyclerBindingAdapter<Floor, FloorRoomBinding>() {
+    private val passengerGenerator = viewModel.passengerGenerator
+
     init {
-        super.postData(floors)
+        super.postData(viewModel.floors)
     }
 
     class ViewHolder(binding: FloorRoomBinding) :
@@ -32,6 +34,7 @@ class FloorAdapter(floors: List<Floor>) : RecyclerBindingAdapter<Floor, FloorRoo
     ): RecyclerBindingAdapter.ViewHolder<Floor, FloorRoomBinding> = ViewHolder(
         FloorRoomBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             .apply {
+                generator = passengerGenerator
                 lifecycleOwner = parent.context as LifecycleOwner
                 passengerRecycler.initPassengerRecycler(parent.context)
             })

@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="floor_height">50dp</dimen>
+    <dimen name="text_size_control_panel">15sp</dimen>
+    <dimen name="text_size_common">10sp</dimen>
 </resources>
