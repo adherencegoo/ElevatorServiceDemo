@@ -19,7 +19,7 @@ fun String?.nullableToInt(): Int = try {
     0
 }
 
-fun<T : Any, R : Comparable<R>> Pair<T?, T?>.nonNullMinBy(selector: (T) -> R): T? {
+fun <T : Any, R : Comparable<R>> Pair<T?, T?>.nonNullMinBy(selector: (T) -> R): T? {
     return if (first != null) {
         if (second != null) {
             val r1 = selector.invoke(first!!)
@@ -33,12 +33,12 @@ fun<T : Any, R : Comparable<R>> Pair<T?, T?>.nonNullMinBy(selector: (T) -> R): T
     }
 }
 
-fun View.addDisposableOnGlobalLayoutListener(job: () -> Unit) {
-    val listener = object : ViewTreeObserver.OnGlobalLayoutListener {
+fun View.addDisposableOnGlobalLayoutListener(job: () -> Unit) =
+    object : ViewTreeObserver.OnGlobalLayoutListener {
         override fun onGlobalLayout() {
             job.invoke()
             viewTreeObserver.removeOnGlobalLayoutListener(this)
         }
+    }.also {
+        viewTreeObserver.addOnGlobalLayoutListener(it)
     }
-    viewTreeObserver.addOnGlobalLayoutListener(listener)
-}

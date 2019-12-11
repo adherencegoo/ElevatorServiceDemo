@@ -13,12 +13,12 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.constraintlayout.widget.Guideline
 import androidx.lifecycle.Observer
 import com.xdd.elevatorservicedemo.BR
-import com.xdd.elevatorservicedemo.utils.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.databinding.ElevatorShaftBinding
 import com.xdd.elevatorservicedemo.model.Elevator
 import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 import com.xdd.elevatorservicedemo.ui.BindingController
 import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
+import com.xdd.elevatorservicedemo.utils.suspendGlobalLayout
 
 class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
     BindingController<ElevatorShaftBinding, ConstraintLayout>(shaftBinding) {
@@ -130,37 +130,34 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
         serviceConfig = config
     }
 
-    fun setTotalHeight(shaftHeight: Int, shaftTopMargin: Int, onUpdateFinished: (() -> Unit)?) {
-        binding.elevatorShaftBg.apply {
-            // when height of elevatorShaft is updated, setup guidelines in elevatorShaft
-            addDisposableOnGlobalLayoutListener {
-                binding.root.apply {
-                    addDisposableOnGlobalLayoutListener {
-                        initElevatorShaftGuidelines()
-                        onUpdateFinished?.invoke()
-                    }
-
-                    /*
-                     * *** Workaround ***
-                     * ElevatorShaft (ConstraintLayout) itself is encapsulated in a scrollableElevatorShaft (NestedScrollView)
-                     *
-                     * if scrollableElevatorShaft's height is
-                     *  (1) wrap_content: when ElevatorShaft is very tall, scrollableElevatorShaft will overlap views above it (top constraint is ignored)
-                     *  (2) match_constraint: when ElevatorShaft is very short, scrollableElevatorShaft can occupy correct space, but its content (ElevatorShaft) will align top
-                     *
-                     * Workaround:
-                     *  Adopt (2), and add topMargin to push ElevatorShaft to the bottom
-                     * */
-                    val params = layoutParams as ViewGroup.MarginLayoutParams
-                    params.topMargin = shaftTopMargin
-                    layoutParams = params
-                }
-            }
-
+    suspend fun setTotalHeight(shaftHeight: Int, shaftTopMargin: Int) {
+        binding.elevatorShaftBg.suspendGlobalLayout {
             val params = layoutParams
             params.height = shaftHeight
             layoutParams = params
         }
+
+        /*
+         * *** Workaround ***
+         * ElevatorShaft (ConstraintLayout) itself is encapsulated in a scrollableElevatorShaft (NestedScrollView)
+         *
+         * if scrollableElevatorShaft's height is
+         *  (1) wrap_content: when ElevatorShaft is very tall, scrollableElevatorShaft will overlap views above it (top constraint is ignored)
+         *  (2) match_constraint: when ElevatorShaft is very short, scrollableElevatorShaft can occupy correct space, but its content (ElevatorShaft) will align top
+         *
+         * Workaround:
+         *  Adopt (2), and add topMargin to push ElevatorShaft to the bottom
+         * */
+        if (shaftTopMargin > 0) {
+            binding.root.suspendGlobalLayout {
+                val params = layoutParams as ViewGroup.MarginLayoutParams
+                params.topMargin = shaftTopMargin
+                layoutParams = params
+            }
+        }
+
+        // when height of elevatorShaft is updated, setup guidelines in elevatorShaft
+        initElevatorShaftGuidelines()
     }
 
     private fun initElevatorShaftGuidelines() {

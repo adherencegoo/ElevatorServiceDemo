@@ -7,8 +7,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.xdd.elevatorservicedemo.BR
 import com.xdd.elevatorservicedemo.databinding.ElevatorFragmentBinding
 import com.xdd.elevatorservicedemo.ui.BindingController
-import com.xdd.elevatorservicedemo.utils.addDisposableOnGlobalLayoutListener
 import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
+import com.xdd.elevatorservicedemo.utils.suspendGlobalLayout
+import kotlinx.coroutines.launch
 import kotlin.math.max
 
 class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
@@ -28,25 +29,25 @@ class ElevatorFragmentController(fragmentBinding: ElevatorFragmentBinding) :
 
                 elevatorShaftController.setConfig(localViewModel.config)
 
-                localBinding.floorsView.apply {
-                    // when floorsView is fully loaded, update height of elevatorShaft
-                    addDisposableOnGlobalLayoutListener {
-                        // let floorsView and elevatorShaft have the same height
-                        val buildingHeight = computeVerticalScrollRange()
-                        elevatorShaftController.setTotalHeight(
-                            buildingHeight,
-                            max(scrollableShaft.height - buildingHeight, 0)
-                        ) {
-                            // When height of the shaft is updated, scroll to the bottom
-                            scrollableShaft.scrollTo(0, buildingHeight - scrollableShaft.height)
-                        }
+                localViewModel.uiScope.launch {
+                    localBinding.floorsView.suspendGlobalLayout {
+                        adapter = FloorAdapter(localViewModel)
+
+                        val layoutOrientation = RecyclerView.VERTICAL
+                        layoutManager = LinearLayoutManager(context, layoutOrientation, true)
+                        addItemDecoration(DividerItemDecoration(context, layoutOrientation))
                     }
 
-                    adapter = FloorAdapter(localViewModel)
+                    // when floorsView is fully loaded, update height of elevatorShaft
+                    // --> let floorsView and elevatorShaft have the same height
+                    val buildingHeight = localBinding.floorsView.computeVerticalScrollRange()
+                    elevatorShaftController.setTotalHeight(
+                        buildingHeight,
+                        max(scrollableShaft.height - buildingHeight, 0)
+                    )
 
-                    val layoutOrientation = RecyclerView.VERTICAL
-                    layoutManager = LinearLayoutManager(context, layoutOrientation, true)
-                    addItemDecoration(DividerItemDecoration(context, layoutOrientation))
+                    // When height of the shaft is updated, scroll to the bottom
+                    scrollableShaft.scrollTo(0, buildingHeight - scrollableShaft.height)
                 }
             }
         }
