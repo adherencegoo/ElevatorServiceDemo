@@ -118,7 +118,6 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
                         nullableMovement?.takeIf {
                             it.fromFloor != it.toFloor
                         }?.let {
-                            TransitionManager.endTransitions(typedRoot)
                             MoveAnimation(it)
                         }
                     })
