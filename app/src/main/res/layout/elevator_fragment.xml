@@ -15,6 +15,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <Button
+            android:id="@+id/btnResetStartFloor"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="8dp"
+            android:background="@android:drawable/ic_menu_close_clear_cancel"
+            android:onClick="@{(view) -> viewModel.passengerGenerator.resetPickedFloor(false)}"
+            app:layout_constraintBottom_toBottomOf="@+id/btnExchangeStartEndFloor"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/btnExchangeStartEndFloor" />
+
         <TextView
             android:id="@+id/textStartFloor"
             android:layout_width="wrap_content"
@@ -27,7 +39,7 @@
             app:bindPickedFloor="@{viewModel.passengerGenerator.livePickedStartFloor}"
             app:layout_constraintBottom_toBottomOf="@+id/btnExchangeStartEndFloor"
             app:layout_constraintEnd_toStartOf="@+id/btnExchangeStartEndFloor"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btnResetStartFloor"
             app:layout_constraintTop_toTopOf="@+id/btnExchangeStartEndFloor"
             tools:text="StartFloor" />
 
@@ -53,17 +65,29 @@
             app:bindInterestingPickingType="@{true}"
             app:bindPickedFloor="@{viewModel.passengerGenerator.livePickedEndFloor}"
             app:layout_constraintBottom_toBottomOf="@+id/btnExchangeStartEndFloor"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btnResetEndFloor"
             app:layout_constraintStart_toEndOf="@+id/btnExchangeStartEndFloor"
             app:layout_constraintTop_toTopOf="@+id/btnExchangeStartEndFloor"
             tools:text="EndFloor" />
+
+        <Button
+            android:id="@+id/btnResetEndFloor"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="8dp"
+            android:background="@android:drawable/ic_menu_close_clear_cancel"
+            android:onClick="@{(view) -> viewModel.passengerGenerator.resetPickedFloor(true)}"
+            app:layout_constraintBottom_toBottomOf="@+id/btnExchangeStartEndFloor"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/btnExchangeStartEndFloor" />
 
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/controlBottomBarrier"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="textStartFloor,btnExchangeStartEndFloor,textEndFloor" />
+            app:constraint_referenced_ids="btnResetStartFloor,textStartFloor,btnExchangeStartEndFloor,textEndFloor,btnResetEndFloor" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/floorElevatorSeparator"

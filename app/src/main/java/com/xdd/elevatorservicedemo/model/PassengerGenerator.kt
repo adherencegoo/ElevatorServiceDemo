@@ -82,4 +82,12 @@ class PassengerGenerator {
         pickedStartFloor = pickedEndFloor
         pickedEndFloor = tmp
     }
+
+    fun resetPickedFloor(pickingType: Boolean) {
+        if (pickingType == FLOOR_PICKING_TYPE_START) {
+            pickedStartFloor = null
+        } else {
+            pickedEndFloor = null
+        }
+    }
 }
