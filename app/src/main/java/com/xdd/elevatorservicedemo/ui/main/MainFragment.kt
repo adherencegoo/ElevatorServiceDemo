@@ -58,14 +58,21 @@ class MainFragment : Fragment() {
         val activity = requireActivity()
         val config = viewModel.createConfig()
 
-        if (config.floorCount < 2) {
-            Toast.makeText(activity, "Invalid floor count, must >= 2", Toast.LENGTH_LONG)
-                .show()
-        } else {
-            activity.supportFragmentManager.beginTransaction()
-                .replace(R.id.container, ElevatorFragment.newInstance(config))
-                .addToBackStack(null)
-                .commit()
+        when {
+            config.floorCount < 2 -> {
+                Toast.makeText(activity, "Invalid floor count, must >= 2", Toast.LENGTH_LONG)
+                    .show()
+            }
+            config.elevatorCount < 1 -> {
+                Toast.makeText(activity, "Invalid elevator count, must >= 1", Toast.LENGTH_LONG)
+                    .show()
+            }
+            else -> {
+                activity.supportFragmentManager.beginTransaction()
+                    .replace(R.id.container, ElevatorFragment.newInstance(config))
+                    .addToBackStack(null)
+                    .commit()
+            }
         }
     }
 }
