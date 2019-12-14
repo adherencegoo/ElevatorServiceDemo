@@ -127,6 +127,7 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
 
     fun setConfig(config: ElevatorServiceConfig) {
         serviceConfig = config
+        initElevatorShaftGuidelines(config.floorCount)
     }
 
     suspend fun setTotalHeight(shaftHeight: Int, shaftTopMargin: Int) {
@@ -154,15 +155,11 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
                 layoutParams = params
             }
         }
-
-        // when height of elevatorShaft is updated, setup guidelines in elevatorShaft
-        initElevatorShaftGuidelines()
     }
 
-    private fun initElevatorShaftGuidelines() {
+    private fun initElevatorShaftGuidelines(floorCount: Int) {
         val context = typedRoot.context
 
-        val floorCount = serviceConfig.floorCount
         val eachPercentage = 1f / (floorCount)
 
         floorBottomGuidelines = List(floorCount + 1) {
