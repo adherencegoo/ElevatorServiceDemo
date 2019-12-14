@@ -3,6 +3,8 @@ package com.xdd.elevatorservicedemo.utils
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.databinding.Observable
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import java.lang.NumberFormatException
 
 inline fun <reified T : Observable> T.addOnPropertyChanged(crossinline callback: (T, Int) -> Unit) =
@@ -42,3 +44,8 @@ fun View.addDisposableOnGlobalLayoutListener(job: () -> Unit) =
     }.also {
         viewTreeObserver.addOnGlobalLayoutListener(it)
     }
+
+
+fun <T> MediatorLiveData<T>.includeSource(source: LiveData<T>) = addSource(source) {
+    value = it
+}

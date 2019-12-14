@@ -2,12 +2,14 @@ package com.xdd.elevatorservicedemo.ui.elevator
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.xdd.elevatorservicedemo.MyApp
 import com.xdd.elevatorservicedemo.model.*
 import com.xdd.elevatorservicedemo.utils.createChildJob
 import com.xdd.elevatorservicedemo.utils.createScope
+import com.xdd.elevatorservicedemo.utils.includeSource
 import kotlinx.coroutines.Dispatchers
 
 class ElevatorViewModel(application: Application, val config: ElevatorServiceConfig) :
@@ -31,16 +33,23 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
         coroutineJob.cancel()
     }
 
-    val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
+    /**
+     * Observe passenger arrival event from all floors
+     * */
+    private val livePassengerArrived = MediatorLiveData<Unit>()
+
+    val floors = List(config.floorCount) { index ->
+        Floor(config.indexToFloorId(index)).also {
+            livePassengerArrived.includeSource(it.livePassengerArrived)
+        }
+    }
 
     val elevators = List(config.elevatorCount) { index ->
         val elevator = Elevator(index, this)
 
-        // An elevator must observe the event: passenger arrival to all floors
-        floors.forEach { floor ->
-            floor.livePassengerArrived.observeForever {
-                elevator.triggerMove()
-            }
+        // An elevator only need to observes the collective event
+        livePassengerArrived.observeForever {
+            elevator.triggerMove()
         }
 
         elevator
