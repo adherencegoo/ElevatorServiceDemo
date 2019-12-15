@@ -82,7 +82,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     private var realFloor = viewModel.floors.first()
         private set(value) {
             if (field != value) {
-                Lg.become("realFloor", field, value).printLog(Lg.Type.I)
+                Lg.i(this, Lg.become("realFloor", field, value))
                 field = value
                 _liveFloor.postValue(value)
 
@@ -102,7 +102,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     private var realDirection = Direction.NONE
         set(value) {
             if (field != value) {
-                Lg.become("realDirection", field, value).printLog(Lg.Type.I)
+                Lg.i(this, Lg.become("realDirection", field, value))
                 field = value
                 _liveDirection.postValue(value)
             }
@@ -117,7 +117,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
             val alreadyAtDestFloor = realFloor == value?.toFloor
 
             if (differentDestFloor || alreadyAtDestFloor) {
-                Lg.become("realMovement", field, value).printLog(Lg.Type.I)
+                Lg.i(this, Lg.become("realMovement", field, value))
                 field = value
                 _liveMovement.postValue(value)
 
@@ -186,7 +186,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     private val actionLeaveElevator = object : NamedAction("LeaveElevator") {
         override fun invoke(): Long {
             val passengers =
-                removePassengers(realFloor).also { Lg.d("leave elevator($this):$it") }
+                removePassengers(realFloor).also { Lg.d("leave elevator(${this@Elevator}):$it") }
             return if (passengers.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
         }
     }
@@ -195,7 +195,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         override fun invoke(): Long {
             // leave floor
             val fromFloorToElevator = realFloor.removePassengers(realDirection)
-                .also { Lg.d("($realDirection) leave $realFloor, enter $this: $it") }
+                .also { Lg.d("($realDirection) leave $realFloor, enter ${this@Elevator}: $it") }
             // enter elevator
             addPassengers(fromFloorToElevator)
 
