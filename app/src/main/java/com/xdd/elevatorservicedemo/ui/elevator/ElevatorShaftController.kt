@@ -106,54 +106,21 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
     private lateinit var serviceConfig: ElevatorServiceConfig
 
     init {
-        binding.addOnPropertyChanged { localBinding, propertyId ->
-            if (propertyId == BR.elevator) {
-                val localElevator = localBinding.elevator!!
-
-                // When movement changed, cancel old transition and start a new one
-                localElevator.liveMovement.observe(
-                    localBinding.lifecycleOwner!!,
-                    Observer { nullableMovement ->
-                        nullableMovement?.takeIf {
-                            it.fromFloor != it.toFloor
-                        }?.let {
-                            MoveAnimation(it)
-                        }
-                    })
-            }
-        }
+        // When movement changed, cancel old transition and start a new one
+        binding.elevator!!.liveMovement.observe(
+            binding.lifecycleOwner!!,
+            Observer { nullableMovement ->
+                nullableMovement?.takeIf {
+                    it.fromFloor != it.toFloor
+                }?.let {
+                    MoveAnimation(it)
+                }
+            })
     }
 
     fun setConfig(config: ElevatorServiceConfig) {
         serviceConfig = config
         initElevatorShaftGuidelines(config.floorCount)
-    }
-
-    suspend fun setTotalHeight(shaftHeight: Int, shaftTopMargin: Int) {
-        binding.elevatorShaftBg.suspendGlobalLayout {
-            val params = layoutParams
-            params.height = shaftHeight
-            layoutParams = params
-        }
-
-        /*
-         * *** Workaround ***
-         * ElevatorShaft (ConstraintLayout) itself is encapsulated in a scrollableElevatorShaft (NestedScrollView)
-         *
-         * if scrollableElevatorShaft's height is
-         *  (1) wrap_content: when ElevatorShaft is very tall, scrollableElevatorShaft will overlap views above it (top constraint is ignored)
-         *  (2) match_constraint: when ElevatorShaft is very short, scrollableElevatorShaft can occupy correct space, but its content (ElevatorShaft) will align top
-         *
-         * Workaround:
-         *  Adopt (2), and add topMargin to push ElevatorShaft to the bottom
-         * */
-        if (shaftTopMargin > 0) {
-            binding.root.suspendGlobalLayout {
-                val params = layoutParams as ViewGroup.MarginLayoutParams
-                params.topMargin = shaftTopMargin
-                layoutParams = params
-            }
-        }
     }
 
     private fun initElevatorShaftGuidelines(floorCount: Int) {
