@@ -14,6 +14,7 @@ import kotlin.math.abs
 class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(id) {
     companion object {
         private const val DELAY_FOR_PASSENGER_ANIMATION = 1000L
+        private val ELEVATORS_COWORK_LOCK = object : Any() {}
     }
 
     /**
@@ -46,7 +47,11 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
             val targetFloor = candidateFloors.map {
                 viewModel.getFloor(it)
             }.firstOrNull { floor ->
-                hasPassengers(floor) || floor.hasPassengers(wantedDirection)
+                hasPassengers(floor) || viewModel.elevatorShouldHandleFloorRequest(
+                    this@Elevator,
+                    floor,
+                    wantedDirection
+                )
             }
 
             return targetFloor?.let { floor ->
@@ -110,7 +115,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
 
     private val _liveMovement = MutableLiveData<Movement>()
     val liveMovement: LiveData<Movement> = _liveMovement
-    private var realMovement: Movement? = null
+    var realMovement: Movement? = null
         private set(value) {
             val differentDestFloor = field?.toFloor != value?.toFloor
             // When movement changed, if currentFloor == targetFloor, then arrive
@@ -169,7 +174,11 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
 
     private val actionMove = object : NamedAction("Move") {
         override fun invoke(): Long {
-            realMovement = getNextMovement()
+            // `getNextMovement` will use `realMovement`s from other elevators
+            // Use synchronized to make sure that: `realMovement` is already assigned when reading it
+            synchronized(ELEVATORS_COWORK_LOCK) {
+                realMovement = getNextMovement()
+            }
             return 0L
         }
     }

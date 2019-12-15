@@ -59,5 +59,32 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
 
     fun getFloor(floorId: Int) = floors[config.floorIdToIndex(floorId)]
 
+    /**
+     * @return There is a [requestedDirection] request in [requestedFloor], should [elevator] handle it?
+     *
+     * Used to prevent that a floor request is handled by multiple elevators
+     * */
+    fun elevatorShouldHandleFloorRequest(
+        elevator: Elevator,
+        requestedFloor: Floor,
+        requestedDirection: Direction
+    ): Boolean {
+        if (!requestedFloor.hasPassengers(requestedDirection)) {
+            return false
+        }
+
+        // Find elevators which have handled the request: going to [requestedFloor] for [requestedDirection] passengers
+        val otherHandlers = elevators.filter {
+            // exclude self
+            it != elevator &&
+                    it.realMovement?.let { movement ->
+                        movement.toFloor == requestedFloor && movement.futureDirection == requestedDirection
+                    } == true
+        }
+        // This request hasn't been handled by other elevators
+        return otherHandlers.isEmpty()
+    }
+
+
     suspend fun generatePassenger() = passengerGenerator.generate(this)
 }
