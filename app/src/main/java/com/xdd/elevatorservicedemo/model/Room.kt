@@ -20,6 +20,7 @@ abstract class Room<K>(val id: Int) {
         } ?: emptyList<Passenger>()
     }
 
+    /** must be called in sync block*/
     private fun notifyPassengerMapUpdated() = livePassengerMap.postValue(passengers)
 
     abstract fun getPassengerKey(passenger: Passenger): K
@@ -27,23 +28,30 @@ abstract class Room<K>(val id: Int) {
     open fun idToName() = id.toString()
 
     open fun addPassengers(newPassengers: List<Passenger>) {
-        newPassengers.forEach {
-            passengers.getOrPut(getPassengerKey(it), { mutableListOf() }) += it
+        synchronized(passengers) {
+            newPassengers.forEach {
+                passengers.getOrPut(getPassengerKey(it), { mutableListOf() }) += it
+            }
+            notifyPassengerMapUpdated()
+            Lg.i(this, newPassengers)
         }
-        notifyPassengerMapUpdated()
-        Lg.i(this, newPassengers)
     }
 
     fun removePassengers(key: K): List<Passenger> {
-        return passengers.remove(key)?.also { notifyPassengerMapUpdated() } ?: emptyList()
+        return synchronized(passengers) {
+            passengers.remove(key)?.also { notifyPassengerMapUpdated() } ?: emptyList()
+        }
     }
 
     fun hasPassengers(key: K): Boolean {
-        val list = passengers[key] ?: return false
-        return list.isNotEmpty()
+        return synchronized(passengers) {
+            passengers[key]?.isNotEmpty() == true
+        }
     }
 
-    fun hasAnyPassengers() = passengers.isNotEmpty()
+    fun hasAnyPassengers() = synchronized(passengers) {
+        passengers.isNotEmpty()
+    }
 
     override fun toString(): String {
         return Lg.toNoPackageSimpleString(this, true) + ":{ id:${idToName()} }"
