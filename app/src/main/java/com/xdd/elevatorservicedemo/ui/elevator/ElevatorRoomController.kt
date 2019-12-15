@@ -11,17 +11,16 @@ import com.xdd.elevatorservicedemo.ui.BindingController
 class ElevatorRoomController(roomBinding: ElevatorRoomBinding) :
     BindingController<ElevatorRoomBinding, ConstraintLayout>(roomBinding) {
 
-    init {
-        val recycler = binding.passengerRecycler
-        recycler.initPassengerRecycler(binding.root.context)
+    private val passengersObserver = Observer<List<Passenger>> {
+        (binding.passengerRecycler.adapter as PassengerAdapter).postData(it ?: emptyList())
+    }
 
+    init {
+        // init passenger recycler
+        binding.passengerRecycler.initPassengerRecycler()
         binding.addOnPropertyChanged { localBinding, propertyId ->
             if (propertyId == BR.elevator) {
-                localBinding.elevator?.let { localElevator ->
-                    localElevator.livePassengerList.observe(localBinding.lifecycleOwner!!, Observer<List<Passenger>> {
-                        (recycler.adapter as PassengerAdapter).postData(it ?: emptyList())
-                    })
-                }
+                localBinding.elevator?.livePassengerList?.observe(binding.lifecycleOwner!!, passengersObserver)
             }
         }
     }

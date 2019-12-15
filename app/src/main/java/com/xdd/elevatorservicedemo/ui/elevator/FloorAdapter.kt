@@ -56,7 +56,7 @@ class FloorAdapter(viewModel: ElevatorViewModel) : RecyclerBindingAdapter<Floor,
             .apply {
                 generator = passengerGenerator
                 lifecycleOwner = parent.context as LifecycleOwner
-                passengerRecycler.initPassengerRecycler(parent.context)
+                passengerRecycler.initPassengerRecycler()
             })
 
     override fun postData(data: List<Floor>) {

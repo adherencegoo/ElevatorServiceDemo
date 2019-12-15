@@ -2,6 +2,8 @@ package com.xdd.elevatorservicedemo.utils
 
 import android.view.View
 import android.view.ViewTreeObserver
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.databinding.Observable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
@@ -49,3 +51,10 @@ fun View.addDisposableOnGlobalLayoutListener(job: () -> Unit) =
 fun <T> MediatorLiveData<T>.includeSource(source: LiveData<T>) = addSource(source) {
     value = it
 }
+
+fun ConstraintLayout.applyConstraints(constraintSetUpdater: (ConstraintSet) -> Unit) =
+    ConstraintSet().also {
+        it.clone(this)
+        constraintSetUpdater.invoke(it)
+        it.applyTo(this)
+    }

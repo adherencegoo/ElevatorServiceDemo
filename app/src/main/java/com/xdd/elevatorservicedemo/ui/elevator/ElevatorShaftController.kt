@@ -18,6 +18,7 @@ import com.xdd.elevatorservicedemo.model.Elevator
 import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
 import com.xdd.elevatorservicedemo.ui.BindingController
 import com.xdd.elevatorservicedemo.utils.addOnPropertyChanged
+import com.xdd.elevatorservicedemo.utils.applyConstraints
 import com.xdd.elevatorservicedemo.utils.suspendGlobalLayout
 
 class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
@@ -73,14 +74,12 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
 
             // Actually change location of ElevatorRoom
             val targetFloorIndex = serviceConfig.floorIdToIndex(targetFloorId)
-            ConstraintSet().apply {
-                clone(typedRoot)
-                connectVertical(
+            typedRoot.applyConstraints {
+                it.connectVertical(
                     elevatorRoomController.typedRoot,
                     floorBottomGuidelines[targetFloorIndex + 1],
                     floorBottomGuidelines[targetFloorIndex]
                 )
-                applyTo(typedRoot)
             }
 
             TransitionManager.beginDelayedTransition(typedRoot, this)
