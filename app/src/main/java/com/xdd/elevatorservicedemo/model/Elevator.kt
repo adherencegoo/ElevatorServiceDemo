@@ -33,7 +33,10 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         }
 
         override fun toString(): String {
-            return Lg.toNoPackageSimpleString(this, true) + ":{ $fromFloor --> $toFloor, futureDirection:$futureDirection }"
+            return Lg.toNoPackageSimpleString(
+                this,
+                true
+            ) + ":{ $fromFloor --> $toFloor, futureDirection:$futureDirection }"
         }
     }
 
@@ -291,24 +294,24 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         // serve outward passengers
         Pair(
             CandidateRequest(Direction.UP, currentFloorId + 1..top).findMovement(),
-            CandidateRequest(Direction.DOWN, currentFloorId - 1 downTo base).findMovement())
-            .nonNullMinBy {
-                // find the one which is closer to currentFloor
-                abs(it.toFloor - currentFloor)
-            }?.let {
-                return it
-            }
+            CandidateRequest(Direction.DOWN, currentFloorId - 1 downTo base).findMovement()
+        ).nonNullMinBy {
+            // find the one which is closer to currentFloor
+            abs(it.toFloor - currentFloor)
+        }?.let {
+            return it
+        }
 
         // serve inward passengers
         Pair(
             CandidateRequest(Direction.DOWN, top downTo currentFloorId + 1).findMovement(),
-            CandidateRequest(Direction.UP, base until currentFloorId).findMovement())
-            .nonNullMinBy {
-                // find the one which is farther to currentFloor
-                -abs(it.toFloor - currentFloor)
-            }?.let {
-                return it
-            }
+            CandidateRequest(Direction.UP, base until currentFloorId).findMovement()
+        ).nonNullMinBy {
+            // find the one which is farther to currentFloor
+            -abs(it.toFloor - currentFloor)
+        }?.let {
+            return it
+        }
 
         return null
     }

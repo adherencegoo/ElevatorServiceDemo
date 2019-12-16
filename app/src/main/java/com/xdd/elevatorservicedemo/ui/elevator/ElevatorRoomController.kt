@@ -20,7 +20,10 @@ class ElevatorRoomController(roomBinding: ElevatorRoomBinding) :
         binding.passengerRecycler.initPassengerRecycler()
         binding.addOnPropertyChanged { localBinding, propertyId ->
             if (propertyId == BR.elevator) {
-                localBinding.elevator?.livePassengerList?.observe(binding.lifecycleOwner!!, passengersObserver)
+                localBinding.elevator?.livePassengerList?.observe(
+                    binding.lifecycleOwner!!,
+                    passengersObserver
+                )
             }
         }
     }

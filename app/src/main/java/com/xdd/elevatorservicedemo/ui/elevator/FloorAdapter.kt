@@ -12,7 +12,8 @@ import com.xdd.elevatorservicedemo.ui.RecyclerBindingAdapter
 import java.lang.UnsupportedOperationException
 import java.lang.ref.WeakReference
 
-class FloorAdapter(viewModel: ElevatorViewModel) : RecyclerBindingAdapter<Floor, FloorRoomBinding>() {
+class FloorAdapter(viewModel: ElevatorViewModel) :
+    RecyclerBindingAdapter<Floor, FloorRoomBinding>() {
     private val passengerGenerator = viewModel.passengerGenerator
 
     init {
