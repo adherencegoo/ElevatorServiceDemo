@@ -4,8 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
-import com.xdd.elevatorservicedemo.utils.createSingleThreadScope
-import com.xdd.elevatorservicedemo.utils.nonNullMinBy
+import com.xdd.elevatorservicedemo.utils.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.*
@@ -15,6 +14,75 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     companion object {
         private const val DELAY_FOR_PASSENGER_ANIMATION = 1000L
         private val ELEVATORS_COWORK_LOCK = object : Any() {}
+    }
+
+    class PriorityComparator(requestedFloor: Floor, requestedDirection: Direction) :
+        Comparator<Elevator> {
+        private val rootSelector: PairSelector<Elevator>
+
+        init {
+            val matchFloorRequestSelector = ConditionSelector<Elevator>({ elevator ->
+                elevator.realMovement?.let {
+                    it.toFloor == requestedFloor && it.futureDirection == requestedDirection
+                } == true
+            })
+
+            val hasInteriorRequestSelector = ConditionSelector<Elevator>({
+                it.hasPassengers(requestedFloor)
+            })
+
+            val minCurrentDistanceSelector = ValueSelector<Elevator, Int>({
+                abs(it.realFloor.id - requestedFloor.id)
+            })
+
+            // distance after finishing current movement
+            val minFutureDistanceSelector = ValueSelector<Elevator, Int>({
+                abs((it.realMovement?.toFloor ?: it.realFloor).id - requestedFloor.id)
+            })
+
+            val idleSelector = ConditionSelector<Elevator>({
+                it.realMovement == null
+            })
+
+            // the elevator is moving toward the requestedFloor
+            val moveTowardRequestSelector = ConditionSelector<Elevator>({
+                it.realDirection == Direction.infer(it.realFloor.id, requestedFloor.id)
+            })
+
+            // requestedFloor is on the way from current floor to original destination floor
+            val withinRealMovementSelector = ConditionSelector<Elevator>({ elevator ->
+                elevator.realMovement?.let {
+                    requestedFloor.id in elevator.realFloor.id..it.toFloor.id
+                } == true
+            })
+
+            // assemble the above selectors into a tree structure selector
+            moveTowardRequestSelector.also { moveToward ->
+                moveToward.onBothPassed = withinRealMovementSelector.also { withinMovement ->
+                    withinMovement.onBothPassed = matchFloorRequestSelector.also { matchRequest ->
+                        matchRequest.onBothPassedOrFailed =
+                            hasInteriorRequestSelector.also { hasInteriorRequest ->
+                                hasInteriorRequest.onBothPassed = minCurrentDistanceSelector
+                            }
+                    }
+
+                    withinMovement.onBothFailed =
+                        minFutureDistanceSelector.also { minFutureDistance ->
+                            minFutureDistance.onEqual = hasInteriorRequestSelector
+                        }
+                }
+
+                moveToward.onBothFailed = idleSelector.also { idle ->
+                    idle.onBothPassed = minCurrentDistanceSelector
+                }
+            }
+
+            rootSelector = moveTowardRequestSelector
+        }
+
+        override fun compare(e0: Elevator, e1: Elevator): Int {
+            return if (rootSelector(e0, e1) == e0) -1 else 1
+        }
     }
 
     /**

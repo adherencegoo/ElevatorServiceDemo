@@ -6,6 +6,7 @@ import com.xdd.elevatorservicedemo.MyApp
 import com.xdd.elevatorservicedemo.model.*
 import com.xdd.elevatorservicedemo.utils.createChildJob
 import com.xdd.elevatorservicedemo.utils.createScope
+import com.xdd.elevatorservicedemo.utils.mutableShadowClone
 import kotlinx.coroutines.Dispatchers
 
 class ElevatorViewModel(application: Application, val config: ElevatorServiceConfig) :
@@ -51,9 +52,8 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
                 is FloorEvent.RawChange -> {
                     //xdd
                     if (event.change.increase) {
-                        elevators.forEach {
-                            it.triggerMove()
-                        }
+                        // only trigger the highest priority elevator
+                        getPrioritizedElevators(event.floor, event.change.key).first().triggerMove()
                     } else {
                         //xdd
                     }
@@ -107,4 +107,17 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
 
 
     suspend fun generatePassenger() = passengerGenerator.generate(this)
+
+    private fun getPrioritizedElevators(
+        requestedFloor: Floor,
+        requestedDirection: Direction
+    ): List<Elevator> {
+        return if (elevators.size == 1) {
+            elevators
+        } else {
+            elevators.mutableShadowClone().apply {
+                sortWith(Elevator.PriorityComparator(requestedFloor, requestedDirection))
+            }
+        }
+    }
 }

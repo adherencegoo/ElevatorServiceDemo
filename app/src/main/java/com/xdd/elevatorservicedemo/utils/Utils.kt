@@ -58,3 +58,5 @@ fun ConstraintLayout.applyConstraints(constraintSetUpdater: (ConstraintSet) -> U
         constraintSetUpdater.invoke(it)
         it.applyTo(this)
     }
+
+fun <T> List<T>.mutableShadowClone() = MutableList(size) { this[it] }
