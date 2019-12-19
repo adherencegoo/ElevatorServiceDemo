@@ -7,6 +7,8 @@ import com.xdd.elevatorservicedemo.model.*
 import com.xdd.elevatorservicedemo.utils.createChildJob
 import com.xdd.elevatorservicedemo.utils.createScope
 import com.xdd.elevatorservicedemo.utils.mutableShadowClone
+import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 
 class ElevatorViewModel(application: Application, val config: ElevatorServiceConfig) :
@@ -44,10 +46,24 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
     override fun onCleared() {
         super.onCleared()
         coroutineJob.cancel()
+        disposableCollectiveFloorEvent.dispose()
+        elevators.forEach(Elevator::destroy)
     }
 
-    private val _liveFloorEvent = MediatorLiveData<FloorEvent>().apply {
-        observeForever { event ->
+    val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
+
+    // Collect passengerChange from all floors, and transform it to a FloorEvent
+    private val observableCollectiveFloorEvent: Observable<FloorEvent> = Observable.merge(
+        floors.map { floor ->
+            floor.observablePassengerChange.map {
+                FloorEvent.RawChange(floor, it)
+            }
+        }
+    )
+
+    private val disposableCollectiveFloorEvent = observableCollectiveFloorEvent
+        .observeOn(Schedulers.newThread())
+        .subscribe { event ->
             when (event) {
                 is FloorEvent.RawChange -> {
                     //xdd
@@ -62,16 +78,7 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
                     //xdd
                 }
             }
-        }
-    }
-
-    val floors = List(config.floorCount) { index ->
-        val floor = Floor(config.indexToFloorId(index))
-        _liveFloorEvent.addSource(floor.livePassengerChange) {
-            _liveFloorEvent.value = FloorEvent.RawChange(floor, it)
-        }
-        floor
-    }
+        }!!
 
     val elevators = List(config.elevatorCount) { Elevator(it, this) }
 

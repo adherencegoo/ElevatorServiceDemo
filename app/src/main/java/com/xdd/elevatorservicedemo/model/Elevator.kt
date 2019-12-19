@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
 import com.xdd.elevatorservicedemo.utils.*
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.*
@@ -139,11 +141,15 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         }
     }
 
-    private val _liveOnArriveFloor = MutableLiveData(Unit).apply {
-        observeForever {
+    private val subjectDoArriveFloor = PublishSubject.create<Unit>()
+
+    private val disposableOnArriveFloor = subjectDoArriveFloor
+        .subscribeOn(Schedulers.single())
+        // the following action is supposed to be very light-weighted
+        // --> use a single shared background scheduler
+        .subscribe {
             realMovement?.let(this@Elevator::arriveFloor)
         }
-    }
 
     private val _liveDoorState = MutableLiveData(DoorState.CLOSED)
     val liveDoorState: LiveData<DoorState> = _liveDoorState
@@ -164,7 +170,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
 
                 // When floor changed, if currentFloor == targetFloor, then arrive
                 if (field == realMovement?.toFloor) {
-                    _liveOnArriveFloor.postValue(Unit)
+                    subjectDoArriveFloor.onNext(Unit)
                 }
             }
         }
@@ -201,9 +207,9 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
                     /* The setter of realMovement is encapsulated in a coroutine Job
                      * And, `arriveFloor` will start a new coroutine Job
                      *
-                     * Use `postValue` to prevent nested Job
+                     * Use non-overlapping Scheduler to prevent nested Job
                     */
-                    _liveOnArriveFloor.postValue(Unit)
+                    subjectDoArriveFloor.onNext(Unit)
                 }
             }
         }
@@ -289,6 +295,9 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         }
     }
 
+    /**
+     * Should be invoked only by [subjectDoArriveFloor]
+     * */
     private fun arriveFloor(movement: Movement) {
         if (movement.futureDirection != Direction.NONE) {
             realDirection = movement.futureDirection
@@ -394,5 +403,9 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
 
     override fun idToName(): String {
         return "Elevator:" + super.idToName()
+    }
+
+    fun destroy() {
+        disposableOnArriveFloor.dispose()
     }
 }

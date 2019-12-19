@@ -1,9 +1,10 @@
 package com.xdd.elevatorservicedemo.model
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import com.example.xddlib.presentation.Lg
+import io.reactivex.Observable
+import io.reactivex.subjects.ReplaySubject
 
 
 /**
@@ -16,6 +17,7 @@ abstract class Room<K>(val id: Int) {
 
     private val livePassengerMap = MutableLiveData<HashMap<K, MutableList<Passenger>>>()
 
+    // This is UI-related
     val livePassengerList = Transformations.map(livePassengerMap) { passengerMap ->
         passengerMap?.values?.fold(mutableListOf()) { all, part ->
             all += part
@@ -23,9 +25,10 @@ abstract class Room<K>(val id: Int) {
         } ?: emptyList<Passenger>()
     }
 
-    private val _livePassengerChange = MutableLiveData<PassengerChange<K>>()
-    val livePassengerChange: LiveData<PassengerChange<K>>
-        get() = _livePassengerChange
+    // This is UI-unrelated
+    private val subjectPassengerChange = ReplaySubject.create<PassengerChange<K>>()
+    val observablePassengerChange: Observable<PassengerChange<K>>
+        get() = subjectPassengerChange
 
     abstract fun getPassengerKey(passenger: Passenger): K
 
@@ -68,7 +71,7 @@ abstract class Room<K>(val id: Int) {
     }
 
     private fun notifyPassengerChanged(change: PassengerChange<K>) {
-        _livePassengerChange.postValue(change)
+        subjectPassengerChange.onNext(change)
         livePassengerMap.postValue(passengers)
     }
 }
