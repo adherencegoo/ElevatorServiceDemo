@@ -1,15 +1,11 @@
 package com.xdd.elevatorservicedemo.ui.elevator
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.*
 import com.xdd.elevatorservicedemo.MyApp
 import com.xdd.elevatorservicedemo.model.*
 import com.xdd.elevatorservicedemo.utils.createChildJob
 import com.xdd.elevatorservicedemo.utils.createScope
-import com.xdd.elevatorservicedemo.utils.includeSource
 import kotlinx.coroutines.Dispatchers
 
 class ElevatorViewModel(application: Application, val config: ElevatorServiceConfig) :
@@ -24,6 +20,22 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
             ElevatorViewModel(application, config) as T
     }
 
+    sealed class FloorEvent(
+        val floor: Floor,
+        val change: Room.PassengerChange<Direction>
+    ) {
+        class RawChange(
+            floor: Floor,
+            passengerChange: Room.PassengerChange<Direction>
+        ) : FloorEvent(floor, passengerChange)
+
+        class Claimed(
+            floor: Floor,
+            passengerChange: Room.PassengerChange<Direction>,
+            val claimer: Elevator
+        ) : FloorEvent(floor, passengerChange)
+    }
+
     val coroutineJob = getApplication<MyApp>().appCoroutineJob.createChildJob()
     val uiScope = coroutineJob.createScope(Dispatchers.Main)
     val backgroundScope = coroutineJob.createScope(Dispatchers.IO)
@@ -33,27 +45,35 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
         coroutineJob.cancel()
     }
 
-    /**
-     * Observe passenger arrival event from all floors
-     * */
-    private val livePassengerArrived = MediatorLiveData<Unit>()
+    private val _liveFloorEvent = MediatorLiveData<FloorEvent>().apply {
+        observeForever { event ->
+            when (event) {
+                is FloorEvent.RawChange -> {
+                    //xdd
+                    if (event.change.increase) {
+                        elevators.forEach {
+                            it.triggerMove()
+                        }
+                    } else {
+                        //xdd
+                    }
+                }
+                is FloorEvent.Claimed -> {
+                    //xdd
+                }
+            }
+        }
+    }
 
     val floors = List(config.floorCount) { index ->
-        Floor(config.indexToFloorId(index)).also {
-            livePassengerArrived.includeSource(it.livePassengerArrived)
+        val floor = Floor(config.indexToFloorId(index))
+        _liveFloorEvent.addSource(floor.livePassengerChange) {
+            _liveFloorEvent.value = FloorEvent.RawChange(floor, it)
         }
+        floor
     }
 
-    val elevators = List(config.elevatorCount) { index ->
-        val elevator = Elevator(index, this)
-
-        // An elevator only need to observes the collective event
-        livePassengerArrived.observeForever {
-            elevator.triggerMove()
-        }
-
-        elevator
-    }
+    val elevators = List(config.elevatorCount) { Elevator(it, this) }
 
     val passengerGenerator = PassengerGenerator()
 

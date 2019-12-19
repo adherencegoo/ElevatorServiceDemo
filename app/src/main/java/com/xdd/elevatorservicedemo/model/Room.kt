@@ -1,5 +1,6 @@
 package com.xdd.elevatorservicedemo.model
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import com.example.xddlib.presentation.Lg
@@ -9,6 +10,8 @@ import com.example.xddlib.presentation.Lg
  * A space containing people
  * */
 abstract class Room<K>(val id: Int) {
+    class PassengerChange<K>(val increase: Boolean, val key: K)
+
     private val passengers = HashMap<K, MutableList<Passenger>>()
 
     private val livePassengerMap = MutableLiveData<HashMap<K, MutableList<Passenger>>>()
@@ -20,26 +23,33 @@ abstract class Room<K>(val id: Int) {
         } ?: emptyList<Passenger>()
     }
 
-    /** must be called in sync block*/
-    private fun notifyPassengerMapUpdated() = livePassengerMap.postValue(passengers)
+    private val _livePassengerChange = MutableLiveData<PassengerChange<K>>()
+    val livePassengerChange: LiveData<PassengerChange<K>>
+        get() = _livePassengerChange
 
     abstract fun getPassengerKey(passenger: Passenger): K
 
     open fun idToName() = id.toString()
 
     open fun addPassengers(newPassengers: List<Passenger>) {
+        newPassengers.groupBy { getPassengerKey(it) }.forEach { (key, list) ->
+            addPassengersWithSameKey(key, list)
+        }
+    }
+
+    private fun addPassengersWithSameKey(key: K, newPassengers: List<Passenger>) {
         synchronized(passengers) {
-            newPassengers.forEach {
-                passengers.getOrPut(getPassengerKey(it), { mutableListOf() }) += it
-            }
-            notifyPassengerMapUpdated()
+            passengers.getOrPut(key, { mutableListOf() }) += newPassengers
+            notifyPassengerChanged(PassengerChange(true, key))
             Lg.i(this, newPassengers)
         }
     }
 
     fun removePassengers(key: K): List<Passenger> {
         return synchronized(passengers) {
-            passengers.remove(key)?.also { notifyPassengerMapUpdated() } ?: emptyList()
+            passengers.remove(key)?.also {
+                notifyPassengerChanged(PassengerChange(false, key))
+            } ?: emptyList()
         }
     }
 
@@ -55,5 +65,10 @@ abstract class Room<K>(val id: Int) {
 
     override fun toString(): String {
         return Lg.toNoPackageSimpleString(this, true) + ":{ id:${idToName()} }"
+    }
+
+    private fun notifyPassengerChanged(change: PassengerChange<K>) {
+        _livePassengerChange.postValue(change)
+        livePassengerMap.postValue(passengers)
     }
 }
