@@ -194,11 +194,12 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     val liveMovement: LiveData<Movement> = _liveMovement
     var realMovement: Movement? = null
         private set(value) {
-            val differentDestFloor = field?.toFloor != value?.toFloor
+            val differentFloorRequest =
+                field?.toFloor != value?.toFloor || field?.futureDirection != value?.futureDirection
             // When movement changed, if currentFloor == targetFloor, then arrive
             val alreadyAtDestFloor = realFloor == value?.toFloor
 
-            if (differentDestFloor || alreadyAtDestFloor) {
+            if (differentFloorRequest || alreadyAtDestFloor) {
                 Lg.i(this, Lg.become("realMovement", field, value))
                 field = value
                 _liveMovement.postValue(value)

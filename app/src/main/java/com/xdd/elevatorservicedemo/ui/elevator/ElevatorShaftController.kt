@@ -11,8 +11,8 @@ import android.view.animation.DecelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.constraintlayout.widget.Guideline
+import androidx.core.transition.doOnEnd
 import androidx.lifecycle.Observer
-import com.xdd.elevatorservicedemo.BR
 import com.xdd.elevatorservicedemo.databinding.ElevatorShaftBinding
 import com.xdd.elevatorservicedemo.model.Elevator
 import com.xdd.elevatorservicedemo.model.ElevatorServiceConfig
@@ -47,7 +47,9 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
         }
     }
 
-    private inner class MoveAnimation(movement: Elevator.Movement) : ChangeBounds() {
+    private var activeMoveAnimation: MoveAnimation? = null
+
+    private inner class MoveAnimation(val movement: Elevator.Movement) : ChangeBounds() {
 
         init {
             val fromFloorId = movement.fromFloor.id
@@ -71,6 +73,9 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
             interpolator = animationInterpolator
             duration = myDuration
             addListener(LiveTransitionListener(animator))
+            doOnEnd {
+                activeMoveAnimation = null
+            }
 
             // Actually change location of ElevatorRoom
             val targetFloorIndex = serviceConfig.floorIdToIndex(targetFloorId)
@@ -111,9 +116,13 @@ class ElevatorShaftController(shaftBinding: ElevatorShaftBinding) :
             binding.lifecycleOwner!!,
             Observer { nullableMovement ->
                 nullableMovement?.takeIf {
+                    // Needs animation
                     it.fromFloor != it.toFloor
+                            // Need this condition because a new movement may be created with same `toFloor` but different `futureDirection`
+                            // --> Need not start a new animation
+                            && activeMoveAnimation?.movement?.toFloor != it.toFloor
                 }?.let {
-                    MoveAnimation(it)
+                    activeMoveAnimation = MoveAnimation(it)
                 }
             })
     }
