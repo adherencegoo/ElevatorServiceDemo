@@ -10,7 +10,7 @@ import com.xdd.elevatorservicedemo.model.DoorState
 import com.xdd.elevatorservicedemo.model.Floor
 import pl.droidsonroids.gif.GifImageView
 
-@BindingAdapter("app:bindDirection")
+@BindingAdapter("bindDirection")
 fun ImageView.bindDirection(direction: Direction?) {
     setImageResource(
         when (direction) {
@@ -21,22 +21,22 @@ fun ImageView.bindDirection(direction: Direction?) {
     )
 }
 
-@BindingAdapter("app:bindDoorState")
+@BindingAdapter("bindDoorState")
 fun GifImageView.bindDoorState(doorState: DoorState?) {
     setImageResource((doorState ?: DoorState.CLOSED).resId)
 }
 
-@BindingAdapter("app:bindPickedFloor")
+@BindingAdapter("bindPickedFloor")
 fun TextView.bindPickedFloor(floor: Floor?) {
     text = floor?.idToName() ?: "Random"
 }
 
-@BindingAdapter("app:bindCurrentPickingType", "app:bindInterestingPickingType")
+@BindingAdapter("bindCurrentPickingType", "bindInterestingPickingType")
 fun TextView.bindPickingType(currentPickingType: Boolean, interestingPickingType: Boolean) {
     setTextColor(if (currentPickingType == interestingPickingType) Color.BLACK else Color.LTGRAY)
 }
 
-@BindingAdapter("app:bindPickedFloorPair", "app:bindSelfFloor")
+@BindingAdapter("bindPickedFloorPair", "bindSelfFloor")
 fun TextView.bindPickedFloorPairToFloorView(pair: Pair<Floor?, Floor?>?, selfFloor: Floor?) {
     val newContent = if (pair == null || selfFloor == null) {
         Pair("", android.R.color.transparent)
