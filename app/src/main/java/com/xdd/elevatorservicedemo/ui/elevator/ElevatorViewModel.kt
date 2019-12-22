@@ -23,22 +23,6 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
             ElevatorViewModel(application, config) as T
     }
 
-    sealed class FloorEvent(
-        val floor: Floor,
-        val change: Room.PassengerChange<Direction>
-    ) {
-        class RawChange(
-            floor: Floor,
-            passengerChange: Room.PassengerChange<Direction>
-        ) : FloorEvent(floor, passengerChange)
-
-        class Claimed(
-            floor: Floor,
-            passengerChange: Room.PassengerChange<Direction>,
-            val claimer: Elevator
-        ) : FloorEvent(floor, passengerChange)
-    }
-
     val coroutineJob = getApplication<MyApp>().appCoroutineJob.createChildJob()
     val uiScope = coroutineJob.createScope(Dispatchers.Main)
     val backgroundScope = coroutineJob.createScope(Dispatchers.IO)
@@ -52,35 +36,39 @@ class ElevatorViewModel(application: Application, val config: ElevatorServiceCon
 
     val floors = List(config.floorCount) { Floor(config.indexToFloorId(it)) }
 
-    // Collect passengerChange from all floors, and transform it to a FloorEvent
+    val elevators = List(config.elevatorCount) { Elevator(it, this) }
+
     private val observableCollectiveFloorEvent: Observable<FloorEvent> = Observable.merge(
         floors.map { floor ->
             floor.observablePassengerChange.map {
-                FloorEvent.RawChange(floor, it)
+                FloorEvent.fromPassengerChange(floor, it)
             }
+        } + elevators.map { elevator ->
+            elevator.observableFloorEvent
         }
     )
 
     private val disposableCollectiveFloorEvent = observableCollectiveFloorEvent
         .observeOn(Schedulers.newThread())
         .subscribe { event ->
-            when (event) {
-                is FloorEvent.RawChange -> {
-                    //xdd
-                    if (event.change.increase) {
-                        // only trigger the highest priority elevator
-                        getPrioritizedElevators(event.floor, event.change.key).first().triggerMove()
-                    } else {
-                        //xdd
-                    }
+            when (event.type) {
+                FloorEvent.Type.REQUEST_SERVICE -> {
+                    getPrioritizedElevators(event.floor, event.direction)
+                        .firstOrNull { it != event.excludedElevator }
+                        ?.triggerMove()
                 }
-                is FloorEvent.Claimed -> {
-                    //xdd
+                FloorEvent.Type.NOTIFY_SERVED -> {
+                    // For those elevators targeting at the served floor,
+                    // cancel the movement for the served floor by recalculating a new movement
+                    elevators.filter { elevator ->
+                        elevator != event.excludedElevator
+                                && elevator.realMovement?.let {
+                            it.toFloor == event.floor && it.futureDirection == event.direction
+                        } == true
+                    }.forEach(Elevator::triggerMove)
                 }
             }
         }!!
-
-    val elevators = List(config.elevatorCount) { Elevator(it, this) }
 
     val passengerGenerator = PassengerGenerator()
 

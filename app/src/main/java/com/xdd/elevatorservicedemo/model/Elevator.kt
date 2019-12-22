@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
 import com.xdd.elevatorservicedemo.utils.*
+import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.isActive
@@ -190,6 +191,12 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
             }
         }
 
+    // Rx for notifying floor event
+    private val subjectFloorEvent = PublishSubject.create<FloorEvent>()
+    val observableFloorEvent: Observable<FloorEvent>
+        get() = subjectFloorEvent
+
+    // LiveData for displaying UI
     private val _liveMovement = MutableLiveData<Movement>()
     val liveMovement: LiveData<Movement> = _liveMovement
     var realMovement: Movement? = null
@@ -201,8 +208,27 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
 
             if (differentFloorRequest || alreadyAtDestFloor) {
                 Lg.i(this, Lg.become("realMovement", field, value))
+
+                // if old movement is not finished, notify other elevators
+                field?.takeIf { it.toFloor != realFloor }?.let {
+                    subjectFloorEvent.onNext(
+                        FloorEvent.fromElevatorMovementChange(
+                            this, it, FloorEvent.Type.REQUEST_SERVICE
+                        )
+                    )
+                }
+
                 field = value
                 _liveMovement.postValue(value)
+
+                value?.let {
+                    // notify that the floor request is served by this elevator
+                    subjectFloorEvent.onNext(
+                        FloorEvent.fromElevatorMovementChange(
+                            this, it, FloorEvent.Type.NOTIFY_SERVED
+                        )
+                    )
+                }
 
                 if (alreadyAtDestFloor) {
                     /* The setter of realMovement is encapsulated in a coroutine Job
