@@ -2,7 +2,6 @@ package com.xdd.elevatorservicedemo.model
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
-import com.example.xddlib.presentation.Lg
 import io.reactivex.Observable
 import io.reactivex.subjects.ReplaySubject
 
@@ -44,7 +43,6 @@ abstract class Room<K>(val id: Int) {
         synchronized(passengers) {
             passengers.getOrPut(key, { mutableListOf() }) += newPassengers
             notifyPassengerChanged(PassengerChange(true, key))
-            Lg.i(this, newPassengers)
         }
     }
 
@@ -64,10 +62,6 @@ abstract class Room<K>(val id: Int) {
 
     fun hasAnyPassengers() = synchronized(passengers) {
         passengers.isNotEmpty()
-    }
-
-    override fun toString(): String {
-        return Lg.toNoPackageSimpleString(this, true) + ":{ id:${idToName()} }"
     }
 
     private fun notifyPassengerChanged(change: PassengerChange<K>) {

@@ -2,7 +2,6 @@ package com.xdd.elevatorservicedemo.model
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.xddlib.presentation.Lg
 import com.xdd.elevatorservicedemo.ui.elevator.ElevatorViewModel
 import com.xdd.elevatorservicedemo.utils.*
 import io.reactivex.Observable
@@ -102,13 +101,6 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         } else {
             elseFutureDirection
         }
-
-        override fun toString(): String {
-            return Lg.toNoPackageSimpleString(
-                this,
-                true
-            ) + ":{ $fromFloor --> $toFloor, futureDirection:$futureDirection }"
-        }
     }
 
     internal inner class CandidateRequest(
@@ -165,7 +157,6 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     private var realFloor = viewModel.floors.first()
         private set(value) {
             if (field != value) {
-                Lg.i(this, Lg.become("realFloor", field, value))
                 field = value
                 _liveFloor.postValue(value)
 
@@ -185,7 +176,6 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     private var realDirection = Direction.NONE
         set(value) {
             if (field != value) {
-                Lg.i(this, Lg.become("realDirection", field, value))
                 field = value
                 _liveDirection.postValue(value)
             }
@@ -207,7 +197,6 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
             val alreadyAtDestFloor = realFloor == value?.toFloor
 
             if (differentFloorRequest || alreadyAtDestFloor) {
-                Lg.i(this, Lg.become("realMovement", field, value))
 
                 // if old movement is not finished, notify other elevators
                 field?.takeIf { it.toFloor != realFloor }?.let {
@@ -299,7 +288,7 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
     private val actionLeaveElevator = object : NamedAction("LeaveElevator") {
         override fun invoke(): Long {
             val passengers =
-                removePassengers(realFloor).also { Lg.d("leave elevator(${this@Elevator}):$it") }
+                removePassengers(realFloor)
             return if (passengers.isEmpty()) 0 else DELAY_FOR_PASSENGER_ANIMATION
         }
     }
@@ -308,7 +297,6 @@ class Elevator(id: Int, private val viewModel: ElevatorViewModel) : Room<Floor>(
         override fun invoke(): Long {
             // leave floor
             val fromFloorToElevator = realFloor.removePassengers(realDirection)
-                .also { Lg.d("($realDirection) leave $realFloor, enter ${this@Elevator}: $it") }
             // enter elevator
             addPassengers(fromFloorToElevator)
 

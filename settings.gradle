@@ -1,5 +1,2 @@
 include ':app'
 rootProject.name='ElevatorServiceDemo'
-
-include ':XDDLib'
-project(':XDDLib').projectDir = new File(settingsDir, '../XDDLib')
